@@ -219,21 +219,21 @@ class Connection {
             
             // Safety warnings
             if (!safe_launch) {
-                cout << "\n⚠️  ADVERTENCIA: La catapulta cuántica apunta hacia el interior del planeta de lanzamiento. OPERACIÓN PELIGROSA." << endl;
+                cout << "\nADVERTENCIA: La catapulta cuantica apunta hacia el interior del planeta de lanzamiento. OPERACION PELIGROSA." << endl;
             }
             if (!safe_receive) {
-                cout << "\n⚠️  ADVERTENCIA: La materia llega desde el interior del planeta receptor. OPERACIÓN PELIGROSA." << endl;
+                cout << "\nADVERTENCIA: La materia llega desde el interior del planeta receptor. OPERACION PELIGROSA." << endl;
             }
             if (safe_launch && safe_receive) {
-                cout << "\n✅ Conexión segura establecida." << endl;
+                cout << "\nConexion segura establecida." << endl;
             }
         }
 };
 
 int main() {
     try {
-        cout << "=== SISTEMA DE CONTROL DE CATAPULTA CUÁNTICA FTL ===" << endl;
-        cout << "FTL Dynamics - Tecnología hasta 20c" << endl;
+        cout << "=== SISTEMA DE CONTROL DE CATAPULTA CUANTICA FTL ===" << endl;
+        cout << "FTL Dynamics - Tecnologia hasta 20c" << endl;
         
         // Input for first planet
         cout << "\n--- PLANETA DE LANZAMIENTO ---" << endl;
