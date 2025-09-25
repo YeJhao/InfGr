@@ -100,6 +100,6 @@ Image clamping(const Image& img) {
     return result;
 }
 
-void main(){
+int main(){
     
 }
