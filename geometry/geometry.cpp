@@ -17,6 +17,7 @@
 #include <stdexcept>
 
 using Eigen::Vector3d;
+using Eigen::Matrix4d;
 using namespace std;
 
 class Direction;
@@ -100,6 +101,9 @@ class Planet {
         Point city_ref;
         double radius;
         Direction azimut0;
+        // Transformation matrices from world coordinates to planet coordinates and vice versa
+        Matrix4d transformation_matrix;
+        Matrix4d inverse_transformation_matrix;
 
         Planet(const Point& center_, const Direction& axis_, const Point& city_ref_)
             : center(center_), axis(axis_), city_ref(city_ref_) 
@@ -121,6 +125,13 @@ class Planet {
             Direction equatorial = axis.cross(center_to_city);
             // Calculate the perpendicular projection of the axis and the equatioral
             azimut0 = axis.cross(equatorial).normalize();
+
+            transformation_matrix(0) = (azimut0.x(), axis.x(), equatorial.x(), center.x());
+            transformation_matrix(1) = (azimut0.y(), axis.y(), equatorial.y(), center.y());
+            transformation_matrix(2) = (azimut0.z(), axis.z(), equatorial.z(), center.z());
+            transformation_matrix(3) = (0, 0, 0, 1);
+
+            inverse_transformation_matrix = transformation_matrix.inverse();
         }
 };
 
@@ -131,6 +142,9 @@ class Station {
         Planet planet;
         Point position;
         Direction k, i, j;
+        // Transformation matrix from planet coordinates to station coordinates and vice versa
+        Matrix4d transformation_matrix;
+        Matrix4d inverse_transformation_matrix;
 
         Station(const Planet& planet_, double inclination_, double azimut_)
             : planet(planet_), inclination(inclination_), azimut(azimut_), position(0, 0, 0) {
@@ -147,7 +161,7 @@ class Station {
             position = planet.center + surface_direction * planet.radius;
 
             // k: Normal to surface
-            k = surface_direction; 
+            k = surface_direction;
             
             // i: Tangent to longitude (azimut direction) 
             i = azimut0_normalized * (-sin(azimut)) + equatorial_perpendicular * cos(azimut);
@@ -156,20 +170,23 @@ class Station {
             
             // j: Tangent to latitude (inclination direction)
             j = k.cross(i).normalize();
+
+            transformation_matrix(0) = (i.x(), j.x(), k.x(), position.x());
+            transformation_matrix(1) = (i.y(), j.y(), k.y(), position.y());
+            transformation_matrix(2) = (i.z(), j.z(), k.z(), position.z());
+            transformation_matrix(3) = (0, 0, 0, 1);
+
+            inverse_transformation_matrix = transformation_matrix.inverse();
         }
 
         // Convert direction from local coordinates (i,j,k) to global UCS coordinates
         Direction localToGlobal(const Direction& localDir) const {
-            return i * localDir.x() + j * localDir.y() + k * localDir.z();
+            return Direction() ;
         }
 
         // Convert direction from global UCS coordinates to local coordinates (i,j,k)
         Direction globalToLocal(const Direction& globalDir) const {
-            return Direction(
-                globalDir.dot(i),
-                globalDir.dot(j),
-                globalDir.dot(k)
-            );
+            return Direction();
         }
 };
 
@@ -191,11 +208,11 @@ class Connection {
             
             // Convert to local coordinates for each station
             launch_local_direction = launch_station->globalToLocal(global_direction);
-            receive_local_direction = receive_station->globalToLocal(-global_direction);
+            receive_local_direction = receive_station->globalToLocal(global_direction);
             
             // Check safety: direction must point away from planet surface (positive k component)
             safe_launch = launch_local_direction.z() > 0;  // k component > 0
-            safe_receive = receive_local_direction.z() > 0; // k component > 0 (incoming from outside)
+            safe_receive = receive_local_direction.z() < 0; // k component < 0 (incoming from outside)
         }
 
         void printConnection() const {
