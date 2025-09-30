@@ -123,7 +123,10 @@ class Planet {
             double radius_from_city = (city_ref - center).mod();
 
             if (abs(radius_from_axis - radius_from_city) > 1e-6) {
-                throw invalid_argument("Radio inconsistente.");
+                throw invalid_argument("Radio inconsistente. Radio del eje: " 
+                    + to_string(radius_from_axis) 
+                    + ", Radio desde ciudad: " 
+                    + to_string(radius_from_city));
             }
 
             radius = radius_from_axis;
@@ -223,26 +226,14 @@ class Station {
             transformation_matrix(3,3) = 1;
 
             inverse_transformation_matrix = transformation_matrix.inverse();
-
-            cout << "Matriz de transformación (local a global):\n" 
-                 << transformation_matrix << endl;
-            cout << "Matriz de transformación inversa (global a local):\n" 
-                 << inverse_transformation_matrix << endl;
-
-            Vector4d pos = Vector4d(position.x(), position.y(), position.z(), 0).transpose() * planet.inverse_transformation_matrix;
-            Point posicion_transformada = Point(pos.x(), pos.y(), pos.z());
-            cout << "Posicion transformada: (" 
-                 << posicion_transformada.x() << ", "
-                 << posicion_transformada.y() << ", "
-                 << posicion_transformada.z() << ")" << endl;
         }
 
         // Convert direction from local coordinates (i,j,k) to global UCS coordinates
         Direction localToGlobal(const Direction& localDir) const {
             Eigen::Matrix3d rotationMatrix;
-            rotationMatrix << transformation_matrix(0,0), transformation_matrix(0,1), transformation_matrix(0,2),
-                            transformation_matrix(1,0), transformation_matrix(1,1), transformation_matrix(1,2),
-                            transformation_matrix(2,0), transformation_matrix(2,1), transformation_matrix(2,2);
+            rotationMatrix << inverse_transformation_matrix(0,0), inverse_transformation_matrix(0,1), inverse_transformation_matrix(0,2),
+                            inverse_transformation_matrix(1,0), inverse_transformation_matrix(1,1), inverse_transformation_matrix(1,2),
+                            inverse_transformation_matrix(2,0), inverse_transformation_matrix(2,1), inverse_transformation_matrix(2,2);
             
             Vector3d localVec(localDir.x(), localDir.y(), localDir.z());
             Vector3d globalVec = rotationMatrix * localVec;
@@ -278,7 +269,7 @@ class Connection {
             : launch_station(launch), receive_station(receive) {
             
             // Calculate global direction from launch to receive
-            global_direction = (receive_station->position - launch_station->position).normalize();
+            global_direction = (receive_station->position - launch_station->position);
             
             // Convert to local coordinates for each station
             launch_local_direction = launch_station->globalToLocal(global_direction);
