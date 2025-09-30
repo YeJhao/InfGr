@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/rauls19/Escritorio/1erCuatri_4o/InfGr/imaging/imaging.cpp" "CMakeFiles/imaging.dir/imaging/imaging.cpp.o" "gcc" "CMakeFiles/imaging.dir/imaging/imaging.cpp.o.d"
+  "/home/rauls19/Escritorio/4o/InfGr/imaging/imaging.cpp" "CMakeFiles/imaging.dir/imaging/imaging.cpp.o" "gcc" "CMakeFiles/imaging.dir/imaging/imaging.cpp.o.d"
   )
 
 # Targets to which this target links.

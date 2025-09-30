@@ -1,1 +1,1 @@
-/usr/bin/c++ CMakeFiles/geometry.dir/geometry/geometry.cpp.o -o /home/rauls19/Escritorio/1erCuatri_4o/InfGr/executables/geometry  /usr/lib/x86_64-linux-gnu/libpng.so -lOpenEXR-3_1 -lOpenEXRUtil-3_1 -lOpenEXRCore-3_1 -lIex-3_1 -lIlmThread-3_1 -lImath-3_1 /usr/lib/x86_64-linux-gnu/libz.so 
+/usr/bin/c++ CMakeFiles/geometry.dir/geometry/geometry.cpp.o -o /home/rauls19/Escritorio/4o/InfGr/executables/geometry  /usr/lib/x86_64-linux-gnu/libpng.so -lOpenEXR-3_1 -lOpenEXRUtil-3_1 -lOpenEXRCore-3_1 -lIex-3_1 -lIlmThread-3_1 -lImath-3_1 /usr/lib/x86_64-linux-gnu/libz.so 

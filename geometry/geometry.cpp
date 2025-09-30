@@ -17,6 +17,7 @@
 #include <stdexcept>
 
 using Eigen::Vector3d;
+using Eigen::Vector4d;
 using Eigen::Matrix4d;
 using namespace std;
 
@@ -26,6 +27,7 @@ class Point {
     public:
         Vector3d coords;
 
+        Point() : coords(0.0, 0.0, 0.0) {}
         Point(double x, double y, double z) : coords(x, y, z) {}
         Point(const Vector3d& vec) : coords(vec) {}
 
@@ -39,6 +41,7 @@ class Point {
 
 class Direction {
     public: 
+        // Vector of doubles!
         Vector3d d;
 
         Direction() : d(0.0, 0.0, 0.0) {}
@@ -82,6 +85,8 @@ class Direction {
         double z() const { return d.z(); }
 };
 
+// Definition of Point operators and Direction multiplication by scalar
+
 Direction Point::operator-(const Point& other) const {
     return Direction(coords - other.coords);
 }
@@ -96,11 +101,15 @@ Direction operator*(double scalar, const Direction& dir) {
 
 class Planet {
     public:
+        // Key points
         Point center;
-        Direction axis;
         Point city_ref;
+        // Planet radius
         double radius;
-        Direction azimut0;
+        // Main directions
+        Direction axis; // from south to north pole (k)
+        Direction azimut0; // in the same plane as equatorial and perpendicular to axis (i)
+        Direction equatorial; // perpendicular to axis and azimut0 (j)
         // Transformation matrices from world coordinates to planet coordinates and vice versa
         Matrix4d transformation_matrix;
         Matrix4d inverse_transformation_matrix;
@@ -109,6 +118,7 @@ class Planet {
             : center(center_), axis(axis_), city_ref(city_ref_) 
         {
 
+            // Check radius consistency
             double radius_from_axis = axis.mod() / 2.0;
             double radius_from_city = (city_ref - center).mod();
 
@@ -117,19 +127,38 @@ class Planet {
             }
 
             radius = radius_from_axis;
-            axis = axis_.normalize();
-
             // Calculate the direction of center->city
-            Direction center_to_city = (city_ref - center).normalize();
-            // Get the perpendicular vector of the previous vector and the axis
+            Direction center_to_city = (city_ref - center);
+            // Get the perpendicular vector of the axis and the center->city
             Direction equatorial = axis.cross(center_to_city);
-            // Calculate the perpendicular projection of the axis and the equatioral
-            azimut0 = axis.cross(equatorial).normalize();
+            // Calculate the perpendicular projection of the equatorial and the axis
+            azimut0 = equatorial.cross(axis);
 
-            transformation_matrix(0) = (azimut0.x(), axis.x(), equatorial.x(), center.x());
-            transformation_matrix(1) = (azimut0.y(), axis.y(), equatorial.y(), center.y());
-            transformation_matrix(2) = (azimut0.z(), axis.z(), equatorial.z(), center.z());
-            transformation_matrix(3) = (0, 0, 0, 1);
+            // Normalize directions
+            Direction equatorial_norm = equatorial.normalize();
+            Direction azimut0_norm = azimut0.normalize();
+            Direction axis_norm = axis.normalize();
+
+            // Build transformation matrix
+            transformation_matrix(0,0) = azimut0_norm.x();
+            transformation_matrix(0,1) = equatorial_norm.x();
+            transformation_matrix(0,2) = axis_norm.x();
+            transformation_matrix(0,3) = center.x();
+
+            transformation_matrix(1,0) = azimut0_norm.y();
+            transformation_matrix(1,1) = equatorial_norm.y();
+            transformation_matrix(1,2) = axis_norm.y();
+            transformation_matrix(1,3) = center.y();
+
+            transformation_matrix(2,0) = azimut0_norm.z();
+            transformation_matrix(2,1) = equatorial_norm.z();
+            transformation_matrix(2,2) = axis_norm.z();
+            transformation_matrix(2,3) = center.z();
+
+            transformation_matrix(3,0) = 0;
+            transformation_matrix(3,1) = 0;
+            transformation_matrix(3,2) = 0;
+            transformation_matrix(3,3) = 1;
 
             inverse_transformation_matrix = transformation_matrix.inverse();
         }
@@ -141,52 +170,97 @@ class Station {
         double azimut;
         Planet planet;
         Point position;
-        Direction k, i, j;
+        Direction i, j ,k;
         // Transformation matrix from planet coordinates to station coordinates and vice versa
         Matrix4d transformation_matrix;
         Matrix4d inverse_transformation_matrix;
 
         Station(const Planet& planet_, double inclination_, double azimut_)
-            : planet(planet_), inclination(inclination_), azimut(azimut_), position(0, 0, 0) {
-            
-            Direction axis_normalized = planet.axis.normalize();
-            Direction azimut0_normalized = planet.azimut0.normalize();
-            Direction equatorial_perpendicular = axis_normalized.cross(azimut0_normalized).normalize();
-            
-            Direction surface_direction = 
-                azimut0_normalized * (sin(inclination) * cos(azimut)) +
-                equatorial_perpendicular * (sin(inclination) * sin(azimut)) +
-                axis_normalized * cos(inclination);
-                
-            position = planet.center + surface_direction * planet.radius;
+            : planet(planet_), inclination(inclination_), azimut(azimut_), position(0, 0, 0) 
+        {
+            position = Point(
+                planet.center.x() + planet.radius * sin(inclination) * cos(azimut),
+                planet.center.y() + planet.radius * sin(inclination) * sin(azimut),
+                planet.center.z() + planet.radius * cos(inclination)
+            );
+
+            cout << "Posicion de la estacion: (" 
+                 << position.x() << ", "
+                 << position.y() << ", "
+                 << position.z() << ")" << endl;
 
             // k: Normal to surface
-            k = surface_direction;
+            k = (position - planet.center);
             
             // i: Tangent to longitude (azimut direction) 
-            i = azimut0_normalized * (-sin(azimut)) + equatorial_perpendicular * cos(azimut);
-            i = i * cos(inclination);
-            i = i.normalize();
+            i = planet.axis.cross(k);
             
             // j: Tangent to latitude (inclination direction)
-            j = k.cross(i).normalize();
+            j = i.cross(k);
 
-            transformation_matrix(0) = (i.x(), j.x(), k.x(), position.x());
-            transformation_matrix(1) = (i.y(), j.y(), k.y(), position.y());
-            transformation_matrix(2) = (i.z(), j.z(), k.z(), position.z());
-            transformation_matrix(3) = (0, 0, 0, 1);
+            Direction i_norm = i.normalize();
+            Direction j_norm = j.normalize();
+            Direction k_norm = k.normalize();
+
+            transformation_matrix(0,0) = i_norm.x();
+            transformation_matrix(0,1) = j_norm.x();
+            transformation_matrix(0,2) = k_norm.x();
+            transformation_matrix(0,3) = position.x();
+
+            transformation_matrix(1,0) = i_norm.y();
+            transformation_matrix(1,1) = j_norm.y();
+            transformation_matrix(1,2) = k_norm.y();
+            transformation_matrix(1,3) = position.y();
+
+            transformation_matrix(2,0) = i_norm.z();
+            transformation_matrix(2,1) = j_norm.z();
+            transformation_matrix(2,2) = k_norm.z();
+            transformation_matrix(2,3) = position.z();
+
+            transformation_matrix(3,0) = 0;
+            transformation_matrix(3,1) = 0;
+            transformation_matrix(3,2) = 0;
+            transformation_matrix(3,3) = 1;
 
             inverse_transformation_matrix = transformation_matrix.inverse();
+
+            cout << "Matriz de transformación (local a global):\n" 
+                 << transformation_matrix << endl;
+            cout << "Matriz de transformación inversa (global a local):\n" 
+                 << inverse_transformation_matrix << endl;
+
+            Vector4d pos = Vector4d(position.x(), position.y(), position.z(), 0).transpose() * planet.inverse_transformation_matrix;
+            Point posicion_transformada = Point(pos.x(), pos.y(), pos.z());
+            cout << "Posicion transformada: (" 
+                 << posicion_transformada.x() << ", "
+                 << posicion_transformada.y() << ", "
+                 << posicion_transformada.z() << ")" << endl;
         }
 
         // Convert direction from local coordinates (i,j,k) to global UCS coordinates
         Direction localToGlobal(const Direction& localDir) const {
-            return Direction() ;
+            Eigen::Matrix3d rotationMatrix;
+            rotationMatrix << transformation_matrix(0,0), transformation_matrix(0,1), transformation_matrix(0,2),
+                            transformation_matrix(1,0), transformation_matrix(1,1), transformation_matrix(1,2),
+                            transformation_matrix(2,0), transformation_matrix(2,1), transformation_matrix(2,2);
+            
+            Vector3d localVec(localDir.x(), localDir.y(), localDir.z());
+            Vector3d globalVec = rotationMatrix * localVec;
+            
+            return Direction(globalVec);
         }
 
         // Convert direction from global UCS coordinates to local coordinates (i,j,k)
         Direction globalToLocal(const Direction& globalDir) const {
-            return Direction();
+            Eigen::Matrix3d rotationMatrix;
+            rotationMatrix << transformation_matrix(0,0), transformation_matrix(0,1), transformation_matrix(0,2),
+                            transformation_matrix(1,0), transformation_matrix(1,1), transformation_matrix(1,2),
+                            transformation_matrix(2,0), transformation_matrix(2,1), transformation_matrix(2,2);
+            
+            Vector3d globalVec(globalDir.x(), globalDir.y(), globalDir.z());
+            Vector3d localVec = rotationMatrix.transpose() * globalVec;
+            
+            return Direction(localVec);
         }
 };
 
@@ -208,11 +282,13 @@ class Connection {
             
             // Convert to local coordinates for each station
             launch_local_direction = launch_station->globalToLocal(global_direction);
+            
+            // For receive station, we need the INCOMING direction (opposite)
             receive_local_direction = receive_station->globalToLocal(global_direction);
             
             // Check safety: direction must point away from planet surface (positive k component)
-            safe_launch = launch_local_direction.z() > 0;  // k component > 0
-            safe_receive = receive_local_direction.z() < 0; // k component < 0 (incoming from outside)
+            safe_launch = launch_local_direction.z() > 0;   // pointing outward from planet
+            safe_receive = receive_local_direction.z() < 0; // incoming from outward
         }
 
         void printConnection() const {
@@ -239,7 +315,7 @@ class Connection {
                 cout << "\nADVERTENCIA: La catapulta cuantica apunta hacia el interior del planeta de lanzamiento. OPERACION PELIGROSA." << endl;
             }
             if (!safe_receive) {
-                cout << "\nADVERTENCIA: La materia llega desde el interior del planeta receptor. OPERACION PELIGROSA." << endl;
+                cout << "\nADVERTENCIA: La materia traspasa el interior del planeta receptor. OPERACION PELIGROSA." << endl;
             }
             if (safe_launch && safe_receive) {
                 cout << "\nConexion segura establecida." << endl;
@@ -260,6 +336,7 @@ int main() {
         Point center1(cx1, cy1, cz1);
         
         cout << "Ingrese eje del planeta (dx dy dz): ";
+        // Este eje va del polo sur al polo norte
         double ax1, ay1, az1;
         cin >> ax1 >> ay1 >> az1;
         Direction axis1(ax1, ay1, az1);

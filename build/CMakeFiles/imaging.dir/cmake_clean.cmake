@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "/home/rauls19/Escritorio/1erCuatri_4o/InfGr/executables/imaging"
-  "/home/rauls19/Escritorio/1erCuatri_4o/InfGr/executables/imaging.pdb"
+  "/home/rauls19/Escritorio/4o/InfGr/executables/imaging"
+  "/home/rauls19/Escritorio/4o/InfGr/executables/imaging.pdb"
   "CMakeFiles/imaging.dir/imaging/imaging.cpp.o"
   "CMakeFiles/imaging.dir/imaging/imaging.cpp.o.d"
 )

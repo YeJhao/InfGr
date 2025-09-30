@@ -1,4 +1,4 @@
-/home/rauls19/Escritorio/1erCuatri_4o/InfGr/build/CMakeFiles/geometry.dir
-/home/rauls19/Escritorio/1erCuatri_4o/InfGr/build/CMakeFiles/imaging.dir
-/home/rauls19/Escritorio/1erCuatri_4o/InfGr/build/CMakeFiles/edit_cache.dir
-/home/rauls19/Escritorio/1erCuatri_4o/InfGr/build/CMakeFiles/rebuild_cache.dir
+/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/geometry.dir
+/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/imaging.dir
+/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/edit_cache.dir
+/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/rebuild_cache.dir

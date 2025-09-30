@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/rauls19/Escritorio/1erCuatri_4o/InfGr
+CMAKE_SOURCE_DIR = /home/rauls19/Escritorio/4o/InfGr
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/rauls19/Escritorio/1erCuatri_4o/InfGr/build
+CMAKE_BINARY_DIR = /home/rauls19/Escritorio/4o/InfGr/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/geometry.dir/depend.make
@@ -70,18 +70,18 @@ include CMakeFiles/geometry.dir/progress.make
 include CMakeFiles/geometry.dir/flags.make
 
 CMakeFiles/geometry.dir/geometry/geometry.cpp.o: CMakeFiles/geometry.dir/flags.make
-CMakeFiles/geometry.dir/geometry/geometry.cpp.o: /home/rauls19/Escritorio/1erCuatri_4o/InfGr/geometry/geometry.cpp
+CMakeFiles/geometry.dir/geometry/geometry.cpp.o: /home/rauls19/Escritorio/4o/InfGr/geometry/geometry.cpp
 CMakeFiles/geometry.dir/geometry/geometry.cpp.o: CMakeFiles/geometry.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/rauls19/Escritorio/1erCuatri_4o/InfGr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/geometry.dir/geometry/geometry.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/geometry.dir/geometry/geometry.cpp.o -MF CMakeFiles/geometry.dir/geometry/geometry.cpp.o.d -o CMakeFiles/geometry.dir/geometry/geometry.cpp.o -c /home/rauls19/Escritorio/1erCuatri_4o/InfGr/geometry/geometry.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/geometry.dir/geometry/geometry.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/geometry.dir/geometry/geometry.cpp.o -MF CMakeFiles/geometry.dir/geometry/geometry.cpp.o.d -o CMakeFiles/geometry.dir/geometry/geometry.cpp.o -c /home/rauls19/Escritorio/4o/InfGr/geometry/geometry.cpp
 
 CMakeFiles/geometry.dir/geometry/geometry.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/geometry.dir/geometry/geometry.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/rauls19/Escritorio/1erCuatri_4o/InfGr/geometry/geometry.cpp > CMakeFiles/geometry.dir/geometry/geometry.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/rauls19/Escritorio/4o/InfGr/geometry/geometry.cpp > CMakeFiles/geometry.dir/geometry/geometry.cpp.i
 
 CMakeFiles/geometry.dir/geometry/geometry.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/geometry.dir/geometry/geometry.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/rauls19/Escritorio/1erCuatri_4o/InfGr/geometry/geometry.cpp -o CMakeFiles/geometry.dir/geometry/geometry.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/rauls19/Escritorio/4o/InfGr/geometry/geometry.cpp -o CMakeFiles/geometry.dir/geometry/geometry.cpp.s
 
 # Object files for target geometry
 geometry_OBJECTS = \
@@ -90,16 +90,16 @@ geometry_OBJECTS = \
 # External object files for target geometry
 geometry_EXTERNAL_OBJECTS =
 
-/home/rauls19/Escritorio/1erCuatri_4o/InfGr/executables/geometry: CMakeFiles/geometry.dir/geometry/geometry.cpp.o
-/home/rauls19/Escritorio/1erCuatri_4o/InfGr/executables/geometry: CMakeFiles/geometry.dir/build.make
-/home/rauls19/Escritorio/1erCuatri_4o/InfGr/executables/geometry: /usr/lib/x86_64-linux-gnu/libpng.so
-/home/rauls19/Escritorio/1erCuatri_4o/InfGr/executables/geometry: /usr/lib/x86_64-linux-gnu/libz.so
-/home/rauls19/Escritorio/1erCuatri_4o/InfGr/executables/geometry: CMakeFiles/geometry.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/rauls19/Escritorio/1erCuatri_4o/InfGr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable /home/rauls19/Escritorio/1erCuatri_4o/InfGr/executables/geometry"
+/home/rauls19/Escritorio/4o/InfGr/executables/geometry: CMakeFiles/geometry.dir/geometry/geometry.cpp.o
+/home/rauls19/Escritorio/4o/InfGr/executables/geometry: CMakeFiles/geometry.dir/build.make
+/home/rauls19/Escritorio/4o/InfGr/executables/geometry: /usr/lib/x86_64-linux-gnu/libpng.so
+/home/rauls19/Escritorio/4o/InfGr/executables/geometry: /usr/lib/x86_64-linux-gnu/libz.so
+/home/rauls19/Escritorio/4o/InfGr/executables/geometry: CMakeFiles/geometry.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable /home/rauls19/Escritorio/4o/InfGr/executables/geometry"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/geometry.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
-CMakeFiles/geometry.dir/build: /home/rauls19/Escritorio/1erCuatri_4o/InfGr/executables/geometry
+CMakeFiles/geometry.dir/build: /home/rauls19/Escritorio/4o/InfGr/executables/geometry
 .PHONY : CMakeFiles/geometry.dir/build
 
 CMakeFiles/geometry.dir/clean:
@@ -107,6 +107,6 @@ CMakeFiles/geometry.dir/clean:
 .PHONY : CMakeFiles/geometry.dir/clean
 
 CMakeFiles/geometry.dir/depend:
-	cd /home/rauls19/Escritorio/1erCuatri_4o/InfGr/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/rauls19/Escritorio/1erCuatri_4o/InfGr /home/rauls19/Escritorio/1erCuatri_4o/InfGr /home/rauls19/Escritorio/1erCuatri_4o/InfGr/build /home/rauls19/Escritorio/1erCuatri_4o/InfGr/build /home/rauls19/Escritorio/1erCuatri_4o/InfGr/build/CMakeFiles/geometry.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/rauls19/Escritorio/4o/InfGr/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/rauls19/Escritorio/4o/InfGr /home/rauls19/Escritorio/4o/InfGr /home/rauls19/Escritorio/4o/InfGr/build /home/rauls19/Escritorio/4o/InfGr/build /home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/geometry.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/geometry.dir/depend
 

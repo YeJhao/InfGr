@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "/home/rauls19/Escritorio/1erCuatri_4o/InfGr/executables/geometry"
-  "/home/rauls19/Escritorio/1erCuatri_4o/InfGr/executables/geometry.pdb"
+  "/home/rauls19/Escritorio/4o/InfGr/executables/geometry"
+  "/home/rauls19/Escritorio/4o/InfGr/executables/geometry.pdb"
   "CMakeFiles/geometry.dir/geometry/geometry.cpp.o"
   "CMakeFiles/geometry.dir/geometry/geometry.cpp.o.d"
 )

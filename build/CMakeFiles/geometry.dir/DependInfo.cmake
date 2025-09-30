@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/rauls19/Escritorio/1erCuatri_4o/InfGr/geometry/geometry.cpp" "CMakeFiles/geometry.dir/geometry/geometry.cpp.o" "gcc" "CMakeFiles/geometry.dir/geometry/geometry.cpp.o.d"
+  "/home/rauls19/Escritorio/4o/InfGr/geometry/geometry.cpp" "CMakeFiles/geometry.dir/geometry/geometry.cpp.o" "gcc" "CMakeFiles/geometry.dir/geometry/geometry.cpp.o.d"
   )
 
 # Targets to which this target links.

@@ -1,5 +1,5 @@
 CMakeFiles/geometry.dir/geometry/geometry.cpp.o: \
- /home/rauls19/Escritorio/1erCuatri_4o/InfGr/geometry/geometry.cpp \
+ /home/rauls19/Escritorio/4o/InfGr/geometry/geometry.cpp \
  /usr/include/stdc-predef.h /usr/include/eigen3/Eigen/Dense \
  /usr/include/eigen3/Eigen/Core \
  /usr/include/eigen3/Eigen/src/Core/util/DisableStupidWarnings.h \
