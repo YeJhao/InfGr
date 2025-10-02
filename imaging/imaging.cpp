@@ -196,6 +196,122 @@ Image clamping(const Image& img) {
     return result;
 }
 
+Image ecualization(const Image& img) {
+    double minR = 1e9, maxR = -1e9;
+    double minG = 1e9, maxG = -1e9;
+    double minB = 1e9, maxB = -1e9;
+
+    // Encuentra mínimos y máximos de cada canal
+    for (int i = 0; i < img.height; ++i) {
+        for (int j = 0; j < img.width; ++j) {
+            const PixelRGB& pixel = img.imagen[i][j];
+            minR = std::min(minR, pixel.R);
+            maxR = std::max(maxR, pixel.R);
+            minG = std::min(minG, pixel.G);
+            maxG = std::max(maxG, pixel.G);
+            minB = std::min(minB, pixel.B);
+            maxB = std::max(maxB, pixel.B);
+        }
+    }
+
+    Image result(img.width, img.height);
+    // Normaliza cada canal
+    for (int i = 0; i < img.height; ++i) {
+        for (int j = 0; j < img.width; ++j) {
+            const PixelRGB& pixel = img.imagen[i][j];
+            double r = (pixel.R - minR) / (maxR - minR) * 255.0;
+            double g = (pixel.G - minG) / (maxG - minG) * 255.0;
+            double b = (pixel.B - minB) / (maxB - minB) * 255.0;
+            // Clamp por seguridad
+            r = std::max(0.0, std::min(255.0, r));
+            g = std::max(0.0, std::min(255.0, g));
+            b = std::max(0.0, std::min(255.0, b));
+            result.imagen[i][j] = PixelRGB(r, g, b);
+        }
+    }
+    return result;
+}
+
+Image clamp_ecualization(const Image& img, double threshold) {
+    double minR = 1e9, maxR = -1e9;
+    double minG = 1e9, maxG = -1e9;
+    double minB = 1e9, maxB = -1e9;
+
+    // Encuentra mínimos y máximos de cada canal
+    for (int i = 0; i < img.height; ++i) {
+        for (int j = 0; j < img.width; ++j) {
+            const PixelRGB& pixel = img.imagen[i][j];
+            minR = std::min(minR, pixel.R);
+            maxR = std::max(maxR, pixel.R);
+            minG = std::min(minG, pixel.G);
+            maxG = std::max(maxG, pixel.G);
+            minB = std::min(minB, pixel.B);
+            maxB = std::max(maxB, pixel.B);
+        }
+    }
+
+    Image result(img.width, img.height);
+    for (int i = 0; i < img.height; ++i) {
+        for (int j = 0; j < img.width; ++j) {
+            const PixelRGB& pixel = img.imagen[i][j];
+            double r, g, b;
+
+            // R
+            if (pixel.R <= threshold) {
+                r = (pixel.R - minR) / (threshold - minR) * 255.0;
+            } else {
+                r = 255.0;
+            }
+            // G
+            if (pixel.G <= threshold) {
+                g = (pixel.G - minG) / (threshold - minG) * 255.0;
+            } else {
+                g = 255.0;
+            }
+            // B
+            if (pixel.B <= threshold) {
+                b = (pixel.B - minB) / (threshold - minB) * 255.0;
+            } else {
+                b = 255.0;
+            }
+
+            // Clamp por seguridad
+            r = std::max(0.0, std::min(255.0, r));
+            g = std::max(0.0, std::min(255.0, g));
+            b = std::max(0.0, std::min(255.0, b));
+            result.imagen[i][j] = PixelRGB(r, g, b);
+        }
+    }
+    return result;
+}
+
+// Hay que usar ecualización antes de aplicar la curva gamma
+Image gamma_curve(const Image& img, double gamma) {
+    Image result(img.width, img.height);
+    for (int i = 0; i < img.height; ++i) {
+        for (int j = 0; j < img.width; ++j) {
+            const PixelRGB& pixel = img.imagen[i][j];
+            double r = 255.0 * pow(pixel.R / 255.0, 1.0 / gamma);
+            double g = 255.0 * pow(pixel.G / 255.0, 1.0 / gamma);
+            double b = 255.0 * pow(pixel.B / 255.0, 1.0 / gamma);
+            // Clamp por seguridad
+            r = std::max(0.0, std::min(255.0, r));
+            g = std::max(0.0, std::min(255.0, g));
+            b = std::max(0.0, std::min(255.0, b));
+            result.imagen[i][j] = PixelRGB(r, g, b);
+        }
+    }
+    return result;
+}
+
+Image clamp_gamma(const Image& img, double clamp_threshold, double gamma) {
+    // 1. Clamping
+    Image clamped = clamp_ecualization(img, clamp_threshold);
+    // 2. Curva gamma
+    Image gamma_img = gamma_curve(clamped, gamma);
+    return gamma_img;
+}
+
 int main(){
     try {
         string hdr_filename;
