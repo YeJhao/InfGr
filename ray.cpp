@@ -106,3 +106,10 @@ int main() {
 
     return 0;
 }
+
+
+
+/*
+ - Colores (Intensidad)
+ - Parte 3 Rendering
+*/
