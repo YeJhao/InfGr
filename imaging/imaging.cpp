@@ -87,6 +87,30 @@ class Image {
             }
             return result;
         }
+
+        Image& operator=(const Image& other) {
+            if (this != &other) {
+                // Free existing memory
+                for (int i = 0; i < height; ++i) {
+                    delete[] imagen[i];
+                }
+                delete[] imagen;
+
+                // Copy dimensions
+                width = other.width;
+                height = other.height;
+
+                // Allocate new memory
+                imagen = new PixelRGB*[height];
+                for (int i = 0; i < height; ++i) {
+                    imagen[i] = new PixelRGB[width];
+                    for (int j = 0; j < width; ++j) {
+                        imagen[i][j] = other.imagen[i][j];
+                    }
+                }
+            }
+            return *this;
+        }
 };
 
 // Function to load HDR image from OpenEXR file
@@ -315,23 +339,110 @@ Image clamp_gamma(const Image& img, double clamp_threshold, double gamma) {
 int main(){
     try {
         string hdr_filename;
+        Image hdr_image(1, 1); // Temporary initialization
+        bool image_loaded = false;
+        
         cout << "=== HDR to LDR Tone Mapping ===\n";
-        cout << "Ingrese el nombre del archivo HDR (incluya la extension .exr): ";
-        cin >> hdr_filename;
         
-        cout << "Cargando imagen HDR: " << hdr_filename << endl;
-        Image hdr_image = loadHDRImage(hdr_filename);
+        // Input validation loop for HDR file
+        while (!image_loaded) {
+            cout << "Ingrese el nombre del archivo HDR (incluya la extension .exr): ";
+            cin >> hdr_filename;
+            
+            // Check if file has .exr extension
+            if (hdr_filename.length() < 4 || hdr_filename.substr(hdr_filename.length() - 4) != ".exr") {
+                cout << "Error: El archivo debe tener extension .exr\n";
+                continue;
+            }
+            
+            try {
+                cout << "Cargando imagen HDR: " << hdr_filename << endl;
+                hdr_image = loadHDRImage(hdr_filename);
+                image_loaded = true;
+            } catch (const exception& e) {
+                cout << "Error cargando el archivo: " << e.what() << "\n";
+                cout << "Por favor, ingrese un archivo HDR válido.\n";
+            }
+        }
         
-        cout << "Aplicando tone mapping con algoritmo de clamping..." << endl;
-        Image ldr_image = clamping(hdr_image);
+        // Algorithm selection menu
+        int algorithm_choice;
+        bool valid_choice = false;
+        
+        while (!valid_choice) {
+            cout << "\n=== Seleccione el algoritmo de tone mapping ===\n";
+            cout << "1. Clamping\n";
+            cout << "2. Ecualización\n";
+            cout << "3. Clamping + Ecualización\n";
+            cout << "4. Curva Gamma\n";
+            cout << "5. Clamping + Gamma\n";
+            cout << "Ingrese su opción (1-5): ";
+            cin >> algorithm_choice;
+            
+            if (algorithm_choice >= 1 && algorithm_choice <= 5) {
+                valid_choice = true;
+            } else {
+                cout << "Opción inválida. Por favor, seleccione un número entre 1 y 5.\n";
+            }
+        }
+        
+        Image ldr_image(1, 1); // Temporary initialization
+        string algorithm_name;
+        
+        // Execute selected algorithm
+        switch (algorithm_choice) {
+            case 1: {
+                cout << "Aplicando tone mapping con algoritmo de clamping..." << endl;
+                ldr_image = clamping(hdr_image);
+                algorithm_name = "clamping";
+                break;
+            }
+            case 2: {
+                cout << "Aplicando tone mapping con algoritmo de ecualización..." << endl;
+                ldr_image = ecualization(hdr_image);
+                algorithm_name = "ecualization";
+                break;
+            }
+            case 3: {
+                double threshold;
+                cout << "Ingrese el valor del umbral para clamping + ecualización: ";
+                cin >> threshold;
+                cout << "Aplicando tone mapping con algoritmo de clamping + ecualización (threshold=" << threshold << ")..." << endl;
+                ldr_image = clamp_ecualization(hdr_image, threshold);
+                algorithm_name = "clamp_ecualization_" + to_string(threshold);
+                break;
+            }
+            case 4: {
+                double gamma;
+                cout << "Ingrese el valor de gamma: ";
+                cin >> gamma;
+                cout << "Aplicando curva gamma (gamma=" << gamma << ")..." << endl;
+                // First apply equalization, then gamma curve
+                Image equalized = ecualization(hdr_image);
+                ldr_image = gamma_curve(equalized, gamma);
+                algorithm_name = "gamma";
+                break;
+            }
+            case 5: {
+                double threshold, gamma;
+                cout << "Ingrese el valor del umbral para clamping: ";
+                cin >> threshold;
+                cout << "Ingrese el valor de gamma: ";
+                cin >> gamma;
+                cout << "Aplicando tone mapping con clamping + gamma (threshold=" << threshold << ", gamma=" << gamma << ")..." << endl;
+                ldr_image = clamp_gamma(hdr_image, threshold, gamma);
+                algorithm_name = "clamp_gamma";
+                break;
+            }
+        }
         
         // Generate output filename
         string output_filename;
         size_t dot_pos = hdr_filename.find_last_of('.');
         if (dot_pos != string::npos) {
-            output_filename = hdr_filename.substr(0, dot_pos) + "_clamping.png";
+            output_filename = hdr_filename.substr(0, dot_pos) + "_" + algorithm_name + ".png";
         } else {
-            output_filename = hdr_filename + "_clamping.png";
+            output_filename = hdr_filename + "_" + algorithm_name + ".png";
         }
         
         cout << "Guardando imagen LDR como: " << output_filename << endl;
@@ -340,6 +451,7 @@ int main(){
         cout << "\n=== Proceso completado exitosamente ===\n";
         cout << "Archivo HDR: " << hdr_filename << endl;
         cout << "Archivo LDR: " << output_filename << endl;
+        cout << "Algoritmo utilizado: " << algorithm_name << endl;
         
     } catch (const exception& e) {
         cerr << "Error: " << e.what() << endl;
