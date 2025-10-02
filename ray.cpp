@@ -49,19 +49,14 @@ Point Ray::planeIntersection(const Plane& plane) {
 }
 
 int main() {
-    cout << "Especifica un rayo (origen y dirección): " << endl;
-    Point rayOrigin;
-    double rOx, rOy, rOz;
+    cout << "Especifica la dirección del rayo: " << endl;
     Direction rayDirection;
     double rDx, rDy, rDz;
-
-    cout << "Origen (x, y, z): ";
-    cin >> rOx >> rOy >> rOz;
-    rayOrigin = Point(rOx, rOy, rOz);
     cout << "Dirección (dx, dy, dz): ";
     cin >> rDx >> rDy >> rDz;
     rayDirection = Direction(rDx, rDy, rDz);
 
+    Point rayOrigin = Point(0, 0, 0);
     Ray ray(rayOrigin, rayDirection.normalized());
 
     
