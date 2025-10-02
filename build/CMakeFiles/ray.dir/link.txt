@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/ray.dir/ray.cpp.o CMakeFiles/ray.dir/geometry/geometry.cpp.o CMakeFiles/ray.dir/geometry/sphere.cpp.o CMakeFiles/ray.dir/geometry/plane.cpp.o -o /home/rauls19/Escritorio/4o/InfGr/executables/ray  /usr/lib/x86_64-linux-gnu/libpng.so -lOpenEXR-3_1 -lOpenEXRUtil-3_1 -lOpenEXRCore-3_1 -lIex-3_1 -lIlmThread-3_1 -lImath-3_1 /usr/lib/x86_64-linux-gnu/libz.so 

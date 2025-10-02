@@ -3,6 +3,8 @@ file(REMOVE_RECURSE
   "/home/rauls19/Escritorio/4o/InfGr/executables/geometry.pdb"
   "CMakeFiles/geometry.dir/geometry/geometry.cpp.o"
   "CMakeFiles/geometry.dir/geometry/geometry.cpp.o.d"
+  "CMakeFiles/geometry.dir/geometry_main.cpp.o"
+  "CMakeFiles/geometry.dir/geometry_main.cpp.o.d"
 )
 
 # Per-language clean rules from dependency scanning.

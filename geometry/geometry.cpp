@@ -1,98 +1,83 @@
 /**
  * File: geometry.cpp
  * Authors: Jiahao Ye (875490) & Raúl Soler Fernández (875478)
- * 
- * Comments: In order to compile, you need to have Eigen library installed.
- *           Install it via:
- *              wget -O Eigen.zip https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip 
- *           Then unzip it and:
- *              a) Include the folder to /usr/local/include
- *              b) Just leave the folder at the same level of the working folder
- * 
  */
 
-#include <Eigen/Dense>
-#include <iostream>
-#include <cmath>
-#include <stdexcept>
-
-using Eigen::Vector3d;
-using Eigen::Vector4d;
-using Eigen::Matrix4d;
+#include "geometry.hpp"
 using namespace std;
 
-class Direction;
+// Point implementations
+Point::Point() : coords(0.0, 0.0, 0.0) {}
+Point::Point(double x, double y, double z) : coords(x, y, z) {}
+Point::Point(const Vector3d& vec) : coords(vec) {}
 
-class Point {
-    public:
-        Vector3d coords;
+double Point::x() const { return coords.x(); }
+double Point::y() const { return coords.y(); }
+double Point::z() const { return coords.z(); }
 
-        Point() : coords(0.0, 0.0, 0.0) {}
-        Point(double x, double y, double z) : coords(x, y, z) {}
-        Point(const Vector3d& vec) : coords(vec) {}
+// Direction implementations
+Direction::Direction() : d(0.0, 0.0, 0.0) {}
+Direction::Direction(double dx, double dy, double dz) : d(dx, dy, dz) {}
+Direction::Direction(const Vector3d& vec) : d(vec) {}
 
-        Direction operator-(const Point& other) const;
-        Point operator+(const Direction& dir) const;
-        
-        double x() const { return coords.x(); }
-        double y() const { return coords.y(); }
-        double z() const { return coords.z(); }
-};
+double Direction::x() const { return d.x(); }
+double Direction::y() const { return d.y(); }
+double Direction::z() const { return d.z(); }
 
-class Direction {
-    public: 
-        // Vector of doubles!
-        Vector3d d;
+double Direction::norm() const {
+    return d.norm();
+}
 
-        Direction() : d(0.0, 0.0, 0.0) {}
-        Direction(double dx, double dy, double dz) : d(dx, dy, dz) {}
-        Direction(const Vector3d& vec) : d(vec) {}
+Direction Direction::normalized() const {
+    return Direction(d.normalized());
+}
 
-        double mod() const {
-            return d.norm();
-        }
+Direction Direction::normalize() {
+    d.normalize();
+    return *this;
+}
 
-        Direction normalize() const {
-            return Direction(d.normalized());
-        }
-        
-        Direction operator+(const Direction& other) const {
-            return Direction(d + other.d);
-        }
-        
-        Direction operator-(const Direction& other) const {
-            return Direction(d - other.d);
-        }
-        
-        Direction operator*(double scalar) const {
-            return Direction(d * scalar);
-        }
-        
-        Direction operator-() const {
-            return Direction(-d);
-        }
-        
-        double dot(const Direction& other) const {
-            return d.dot(other.d);
-        }
-        
-        Direction cross(const Direction& other) const {
-            return Direction(d.cross(other.d));
-        }
-        
-        double x() const { return d.x(); }
-        double y() const { return d.y(); }
-        double z() const { return d.z(); }
-};
+Direction Direction::operator+(const Direction& other) const {
+    return Direction(d + other.d);
+}
 
-// Definition of Point operators and Direction multiplication by scalar
+Direction Direction::operator-(const Direction& other) const {
+    return Direction(d - other.d);
+}
 
+Direction Direction::operator*(double scalar) const {
+    return Direction(d * scalar);
+}
+
+Direction Direction::operator/(double scalar) const {
+    return Direction(d / scalar);
+}
+
+double Direction::dot(const Direction& other) const {
+    return d.dot(other.d);
+}
+
+Direction Direction::cross(const Direction& other) const {
+    return Direction(d.cross(other.d));
+}
+
+// Point operators implementation
 Direction Point::operator-(const Point& other) const {
     return Direction(coords - other.coords);
 }
 
 Point Point::operator+(const Direction& dir) const {
     return Point(coords + dir.d);
+}
+
+std::ostream& operator<<(std::ostream& os, const Point& point) {
+    os << "(" << point.x() << ", " << point.y() << ", " << point.z() << ")";
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Direction& dir) {
+    os << "(" << dir.x() << ", " << dir.y() << ", " << dir.z() << ")";
+    return os;
 }
 
 Direction operator*(double scalar, const Direction& dir) {
@@ -119,8 +104,8 @@ class Planet {
         {
 
             // Check radius consistency
-            double radius_from_axis = axis.mod() / 2.0;
-            double radius_from_city = (city_ref - center).mod();
+            double radius_from_axis = axis.norm() / 2.0;
+            double radius_from_city = (city_ref - center).norm();
 
             if (abs(radius_from_axis - radius_from_city) > 1e-6) {
                 throw invalid_argument("Radio inconsistente. Radio del eje: " 
@@ -313,70 +298,3 @@ class Connection {
             }
         }
 };
-
-int main() {
-    try {
-        cout << "=== SISTEMA DE CONTROL DE CATAPULTA CUANTICA FTL ===" << endl;
-        cout << "FTL Dynamics - Tecnologia hasta 20c" << endl;
-        
-        // Input for first planet
-        cout << "\n--- PLANETA DE LANZAMIENTO ---" << endl;
-        cout << "Ingrese centro del planeta (x y z): ";
-        double cx1, cy1, cz1;
-        cin >> cx1 >> cy1 >> cz1;
-        Point center1(cx1, cy1, cz1);
-        
-        cout << "Ingrese eje del planeta (dx dy dz): ";
-        // Este eje va del polo sur al polo norte
-        double ax1, ay1, az1;
-        cin >> ax1 >> ay1 >> az1;
-        Direction axis1(ax1, ay1, az1);
-        
-        cout << "Ingrese ciudad de referencia (x y z): ";
-        double rx1, ry1, rz1;
-        cin >> rx1 >> ry1 >> rz1;
-        Point city_ref1(rx1, ry1, rz1);
-        
-        Planet planet1(center1, axis1, city_ref1);
-        
-        cout << "Ingrese inclinación y azimut de la estación (theta phi en radianes): ";
-        double inc1, azimut1;
-        cin >> inc1 >> azimut1;
-        Station station1(planet1, inc1, azimut1);
-        
-        // Input for second planet
-        cout << "\n--- PLANETA RECEPTOR ---" << endl;
-        cout << "Ingrese centro del planeta (x y z): ";
-        double cx2, cy2, cz2;
-        cin >> cx2 >> cy2 >> cz2;
-        Point center2(cx2, cy2, cz2);
-        
-        cout << "Ingrese eje del planeta (dx dy dz): ";
-        double ax2, ay2, az2;
-        cin >> ax2 >> ay2 >> az2;
-        Direction axis2(ax2, ay2, az2);
-        
-        cout << "Ingrese ciudad de referencia (x y z): ";
-        double rx2, ry2, rz2;
-        cin >> rx2 >> ry2 >> rz2;
-        Point city_ref2(rx2, ry2, rz2);
-        
-        Planet planet2(center2, axis2, city_ref2);
-        
-        cout << "Ingrese inclinación y azimut de la estación (theta phi en radianes): ";
-        double inc2, azimut2;
-        cin >> inc2 >> azimut2;
-        Station station2(planet2, inc2, azimut2);
-        
-        // Create and display connection
-        cout << "\n--- CALCULANDO CONEXIÓN ---" << endl;
-        Connection connection(&station1, &station2);
-        connection.printConnection();
-        
-    } catch (const exception& e) {
-        cout << "Error: " << e.what() << endl;
-        return 1;
-    }
-    
-    return 0;
-}

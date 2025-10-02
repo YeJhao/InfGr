@@ -283,21 +283,15 @@ Image clamp_ecualization(const Image& img, double threshold) {
             // R
             if (pixel.R <= threshold) {
                 r = (pixel.R - minR) / (threshold - minR) * 255.0;
-            } else {
-                r = 255.0;
-            }
+            } else { r = 255.0; }
             // G
             if (pixel.G <= threshold) {
                 g = (pixel.G - minG) / (threshold - minG) * 255.0;
-            } else {
-                g = 255.0;
-            }
+            } else { g = 255.0; }
             // B
             if (pixel.B <= threshold) {
                 b = (pixel.B - minB) / (threshold - minB) * 255.0;
-            } else {
-                b = 255.0;
-            }
+            } else { b = 255.0; }
 
             // Clamp por seguridad
             r = std::max(0.0, std::min(255.0, r));

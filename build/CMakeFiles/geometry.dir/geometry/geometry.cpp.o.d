@@ -1,7 +1,8 @@
 CMakeFiles/geometry.dir/geometry/geometry.cpp.o: \
  /home/rauls19/Escritorio/4o/InfGr/geometry/geometry.cpp \
- /usr/include/stdc-predef.h /usr/include/eigen3/Eigen/Dense \
- /usr/include/eigen3/Eigen/Core \
+ /usr/include/stdc-predef.h \
+ /home/rauls19/Escritorio/4o/InfGr/geometry/geometry.hpp \
+ /usr/include/eigen3/Eigen/Dense /usr/include/eigen3/Eigen/Core \
  /usr/include/eigen3/Eigen/src/Core/util/DisableStupidWarnings.h \
  /usr/include/eigen3/Eigen/src/Core/util/Macros.h \
  /usr/include/c++/12/cmath \

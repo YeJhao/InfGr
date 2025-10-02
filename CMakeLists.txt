@@ -46,7 +46,10 @@ pkg_check_modules(OPENEXR REQUIRED OpenEXR)
 find_package(Eigen3 REQUIRED)
 
 # Create executable for geometry.cpp
-add_executable(geometry ${CMAKE_CURRENT_SOURCE_DIR}/geometry/geometry.cpp)
+add_executable(geometry 
+    ${CMAKE_CURRENT_SOURCE_DIR}/geometry_main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/geometry.cpp
+)
 target_link_libraries(geometry 
     PNG::PNG
     ${OPENEXR_LIBRARIES}
@@ -54,6 +57,7 @@ target_link_libraries(geometry
 )
 target_include_directories(geometry PRIVATE
     ${OPENEXR_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # Create executable for imaging.cpp
@@ -64,7 +68,24 @@ target_link_libraries(imaging
 )
 target_include_directories(imaging PRIVATE
     ${OPENEXR_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# Create executable for ray.cpp
+add_executable(ray 
+    ${CMAKE_CURRENT_SOURCE_DIR}/ray.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/geometry.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/sphere.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/plane.cpp
+)
+target_link_libraries(ray 
+    PNG::PNG
+    ${OPENEXR_LIBRARIES}
+    Eigen3::Eigen
+)
+target_include_directories(ray PRIVATE
+    ${OPENEXR_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 message(STATUS "Executables will be placed in: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
-message(STATUS "Building geometry and imaging executables")
