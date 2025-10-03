@@ -7,6 +7,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/ray.dir/geometry/plane.cpp.o.d"
   "CMakeFiles/ray.dir/geometry/sphere.cpp.o"
   "CMakeFiles/ray.dir/geometry/sphere.cpp.o.d"
+  "CMakeFiles/ray.dir/geometry/triangle.cpp.o"
+  "CMakeFiles/ray.dir/geometry/triangle.cpp.o.d"
   "CMakeFiles/ray.dir/ray.cpp.o"
   "CMakeFiles/ray.dir/ray.cpp.o.d"
 )

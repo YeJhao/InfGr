@@ -1,115 +1,165 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <map>
+#include <memory>
+#include <string>
 #include "ray.hpp"
+#include "geometry/geometric_shape.hpp"
+#include "geometry/sphere.hpp"
+#include "geometry/plane.hpp"
 
 using namespace std;
 
 // Ray implementations
 Ray::Ray(const Point& origin_, const Direction& direction_) : o(origin_), d(direction_) {}
 
-vector<Point> Ray::sphereIntersections(const Sphere& sphere) {
-    vector<Point> intersections;
-    Direction oc = o - sphere.center;
-    double a = d.dot(d);
-    double b = 2.0 * oc.dot(d);
-    double c = oc.dot(oc) - sphere.radius * sphere.radius;
-    double discriminant = b * b - 4 * a * c;
-
-    if (discriminant < 0) {
-        return intersections; // No intersection, empty vector
-    } else {
-        double t1 = (-b - sqrt(discriminant)) / (2.0 * a);
-        double t2 = (-b + sqrt(discriminant)) / (2.0 * a);
-        if (t1 >= 0) {
-            intersections.push_back(o + d * t1);
-        }
-        if (t2 >= 0 && t2 != t1) {
-            intersections.push_back(o + d * t2);
-        }
-        if (t1 > t2) {
-            intersections.front() = o + d * t2;
-            intersections.back() = o + d * t1;
-        }
-        return intersections;
-    }
-}
-
-Point Ray::planeIntersection(const Plane& plane) {
-    double denom = d.dot(plane.normal);
-    
-    if (fabs(denom) > 1e-6) { // Ensure the ray is not parallel to the plane
-        double t = (plane.origin - o).dot(plane.normal) / denom;
-        if (t >= 0) {
-            return o + t * d; // Intersection point
-        }
-    }
-    // Return a point far away to indicate no intersection (better than nullptr for Point)
-    return Point(INFINITY, INFINITY, INFINITY);
+// New generic method that works with any geometric shape
+std::vector<Point> Ray::intersections(const GeometricShape& shape) const {
+    return shape.intersections(*this);
 }
 
 int main() {
-    cout << "Especifica la dirección del rayo: " << endl;
+    cout << "=== SISTEMA DE INTERSECCIÓN CON FORMAS GEOMÉTRICAS ===" << endl;
+    cout << "Configuración del rayo:" << endl;
+    
     Direction rayDirection;
     double rDx, rDy, rDz;
-    cout << "Dirección (dx, dy, dz): ";
+
+    cout << "Dirección del rayo (dx, dy, dz): ";
     cin >> rDx >> rDy >> rDz;
     rayDirection = Direction(rDx, rDy, rDz);
 
     Point rayOrigin = Point(0, 0, 0);
     Ray ray(rayOrigin, rayDirection.normalized());
-
     
-    cout << "Especifica una esfera (centro y radio): " << endl;
-    Point sphereCenter;
-    double spX, spY, spZ;
-    double sphereRadius;
+    // Mapa para almacenar las formas geométricas con nombres únicos
+    map<string, unique_ptr<GeometricShape>> shapes;
     
-    cout << "Centro (x, y, z): ";
-    cin >> spX >> spY >> spZ;
-    sphereCenter = Point(spX, spY, spZ);
-    cout << "Radio: ";
-    cin >> sphereRadius;
-
-    Sphere sphere(sphereCenter, sphereRadius);
-
-    vector<Point> intersections = ray.sphereIntersections(sphere);
-    if (intersections.empty()) {
-        cout << "No hay intersección con la esfera." << endl;
-    } else {
-        cout << "Intersecciones con la esfera:" << endl;
-        cout << "Número de intersecciones: " << intersections.size() << endl;
-        cout << "Intersección más importante: " << intersections.front() << endl;
-    }
-
-    cout << "Especifica un plano (normal y un punto contenido en él): " << endl;
-    Direction planeNormal;
-    double planeNormalX, planeNormalY, planeNormalZ;
-    Point planePoint;
-    double planePointX, planePointY, planePointZ;
-    cout << "Normal (dx, dy, dz): ";
-    cin >> planeNormalX >> planeNormalY >> planeNormalZ;
-    planeNormal = Direction(planeNormalX, planeNormalY, planeNormalZ);
-    cout << "Punto (x, y, z): ";
-    cin >> planePointX >> planePointY >> planePointZ;
-    planePoint = Point(planePointX, planePointY, planePointZ);
-
-    Plane plane(planeNormal.normalized(), planePoint);
-
-    Point intersection = ray.planeIntersection(plane);
-    // Check if intersection is valid (not at infinity)
-    if (!isinf(intersection.x()) && !isinf(intersection.y()) && !isinf(intersection.z())) {
-        cout << "Intersección con el plano: " << intersection << endl;
-    } else {
-        cout << "No hay intersección con el plano." << endl;
-    }
+    int opcion;
+    do {
+        cout << "\n=== MENÚ PRINCIPAL ===" << endl;
+        cout << "1. Agregar Esfera" << endl;
+        cout << "2. Agregar Plano" << endl;
+        cout << "3. Listar Formas Creadas" << endl;
+        cout << "4. Investigar Intersecciones con Todas las Formas" << endl;
+        cout << "0. Salir" << endl;
+        cout << "Selecciona una opción: ";
+        cin >> opcion;
+        
+        switch(opcion) {
+            case 1: {
+                string nombre;
+                cout << "\nNombre para la esfera: ";
+                cin >> nombre;
+                
+                if (shapes.find(nombre) != shapes.end()) {
+                    cout << "Error: Ya existe una forma con el nombre '" << nombre << "'" << endl;
+                    break;
+                }
+                
+                Point sphereCenter;
+                double spX, spY, spZ, sphereRadius;
+                
+                cout << "Centro de la esfera (x, y, z): ";
+                cin >> spX >> spY >> spZ;
+                sphereCenter = Point(spX, spY, spZ);
+                cout << "Radio: ";
+                cin >> sphereRadius;
+                
+                shapes[nombre] = make_unique<Sphere>(sphereCenter, sphereRadius);
+                cout << "Esfera '" << nombre << "' agregada exitosamente." << endl;
+                break;
+            }
+            
+            case 2: {
+                string nombre;
+                cout << "\nNombre para el plano: ";
+                cin >> nombre;
+                
+                if (shapes.find(nombre) != shapes.end()) {
+                    cout << "Error: Ya existe una forma con el nombre '" << nombre << "'" << endl;
+                    break;
+                }
+                
+                Direction planeNormal;
+                double planeNormalX, planeNormalY, planeNormalZ;
+                Point planePoint;
+                double planePointX, planePointY, planePointZ;
+                
+                cout << "Normal del plano (dx, dy, dz): ";
+                cin >> planeNormalX >> planeNormalY >> planeNormalZ;
+                planeNormal = Direction(planeNormalX, planeNormalY, planeNormalZ);
+                cout << "Punto en el plano (x, y, z): ";
+                cin >> planePointX >> planePointY >> planePointZ;
+                planePoint = Point(planePointX, planePointY, planePointZ);
+                
+                shapes[nombre] = make_unique<Plane>(planeNormal.normalized(), planePoint);
+                cout << "Plano '" << nombre << "' agregado exitosamente." << endl;
+                break;
+            }
+            
+            case 3: {
+                cout << "\n=== FORMAS GEOMÉTRICAS CREADAS ===" << endl;
+                if (shapes.empty()) {
+                    cout << "No hay formas geométricas creadas." << endl;
+                } else {
+                    int contador = 1;
+                    for (const auto& pair : shapes) {
+                        cout << contador << ". Nombre: '" << pair.first << "' - ";
+                        pair.second->print();
+                        contador++;
+                    }
+                }
+                break;
+            }
+            
+            case 4: {
+                cout << "\n=== INVESTIGACIÓN DE INTERSECCIONES ===" << endl;
+                if (shapes.empty()) {
+                    cout << "No hay formas geométricas para investigar." << endl;
+                    break;
+                }
+                
+                cout << "Rayo: origen=" << rayOrigin << ", dirección=" << rayDirection << endl;
+                cout << "\nResultados de intersecciones:" << endl;
+                
+                bool hayIntersecciones = false;
+                for (const auto& pair : shapes) {
+                    vector<Point> intersections = ray.intersections(*pair.second);
+                    
+                    cout << "\n• Forma: '" << pair.first << "'" << endl;
+                    cout << "  Tipo: ";
+                    pair.second->print();
+                    
+                    if (intersections.empty()) {
+                        cout << "  Intersecciones: Ninguna" << endl;
+                    } else {
+                        cout << "  Intersecciones encontradas: " << intersections.size() << endl;
+                        for (size_t i = 0; i < intersections.size(); ++i) {
+                            cout << "    " << (i+1) << ". " << intersections[i] << endl;
+                        }
+                        hayIntersecciones = true;
+                    }
+                }
+                
+                if (!hayIntersecciones) {
+                    cout << "\nEl rayo no intersecta con ninguna de las formas geométricas." << endl;
+                } else {
+                    cout << "\n¡Se encontraron intersecciones!" << endl;
+                }
+                break;
+            }
+            
+            case 0:
+                cout << "Saliendo del programa..." << endl;
+                break;
+                
+            default:
+                cout << "Opción no válida. Por favor, selecciona una opción del menú." << endl;
+        }
+        
+    } while (opcion != 0);
 
     return 0;
 }
-
-
-
-/*
- - Colores (Intensidad)
- - Parte 3 Rendering
-*/

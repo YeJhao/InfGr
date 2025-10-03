@@ -11,6 +11,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/rauls19/Escritorio/4o/InfGr/geometry/geometry.cpp" "CMakeFiles/ray.dir/geometry/geometry.cpp.o" "gcc" "CMakeFiles/ray.dir/geometry/geometry.cpp.o.d"
   "/home/rauls19/Escritorio/4o/InfGr/geometry/plane.cpp" "CMakeFiles/ray.dir/geometry/plane.cpp.o" "gcc" "CMakeFiles/ray.dir/geometry/plane.cpp.o.d"
   "/home/rauls19/Escritorio/4o/InfGr/geometry/sphere.cpp" "CMakeFiles/ray.dir/geometry/sphere.cpp.o" "gcc" "CMakeFiles/ray.dir/geometry/sphere.cpp.o.d"
+  "/home/rauls19/Escritorio/4o/InfGr/geometry/triangle.cpp" "CMakeFiles/ray.dir/geometry/triangle.cpp.o" "gcc" "CMakeFiles/ray.dir/geometry/triangle.cpp.o.d"
   "/home/rauls19/Escritorio/4o/InfGr/ray.cpp" "CMakeFiles/ray.dir/ray.cpp.o" "gcc" "CMakeFiles/ray.dir/ray.cpp.o.d"
   )
 

@@ -230,6 +230,30 @@ geometry/sphere.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/sphere.cpp.s
 .PHONY : geometry/sphere.cpp.s
 
+geometry/triangle.o: geometry/triangle.cpp.o
+.PHONY : geometry/triangle.o
+
+# target to build an object file
+geometry/triangle.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/triangle.cpp.o
+.PHONY : geometry/triangle.cpp.o
+
+geometry/triangle.i: geometry/triangle.cpp.i
+.PHONY : geometry/triangle.i
+
+# target to preprocess a source file
+geometry/triangle.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/triangle.cpp.i
+.PHONY : geometry/triangle.cpp.i
+
+geometry/triangle.s: geometry/triangle.cpp.s
+.PHONY : geometry/triangle.s
+
+# target to generate assembly for a file
+geometry/triangle.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/triangle.cpp.s
+.PHONY : geometry/triangle.cpp.s
+
 geometry_main.o: geometry_main.cpp.o
 .PHONY : geometry_main.o
 
@@ -322,6 +346,9 @@ help:
 	@echo "... geometry/sphere.o"
 	@echo "... geometry/sphere.i"
 	@echo "... geometry/sphere.s"
+	@echo "... geometry/triangle.o"
+	@echo "... geometry/triangle.i"
+	@echo "... geometry/triangle.s"
 	@echo "... geometry_main.o"
 	@echo "... geometry_main.i"
 	@echo "... geometry_main.s"

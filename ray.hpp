@@ -2,9 +2,10 @@
 #define RAY_HPP
 
 #include "geometry/geometry.hpp"
-#include "geometry/sphere.hpp"
-#include "geometry/plane.hpp"
 #include <vector>
+
+// Forward declaration
+class GeometricShape;
 
 class Ray {
     public:
@@ -13,8 +14,8 @@ class Ray {
 
         Ray(const Point& origin_, const Direction& direction_);
 
-        std::vector<Point> sphereIntersections(const Sphere& sphere);
-        Point planeIntersection(const Plane& plane);
+        // Generic method that works with any geometric shape
+        std::vector<Point> intersections(const GeometricShape& shape) const;
 };
 
 #endif // RAY_HPP

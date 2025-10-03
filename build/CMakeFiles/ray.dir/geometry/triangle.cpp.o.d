@@ -1,7 +1,7 @@
-CMakeFiles/ray.dir/geometry/sphere.cpp.o: \
- /home/rauls19/Escritorio/4o/InfGr/geometry/sphere.cpp \
+CMakeFiles/ray.dir/geometry/triangle.cpp.o: \
+ /home/rauls19/Escritorio/4o/InfGr/geometry/triangle.cpp \
  /usr/include/stdc-predef.h \
- /home/rauls19/Escritorio/4o/InfGr/geometry/sphere.hpp \
+ /home/rauls19/Escritorio/4o/InfGr/geometry/triangle.hpp \
  /home/rauls19/Escritorio/4o/InfGr/geometry/geometry.hpp \
  /usr/include/eigen3/Eigen/Dense /usr/include/eigen3/Eigen/Core \
  /usr/include/eigen3/Eigen/src/Core/util/DisableStupidWarnings.h \

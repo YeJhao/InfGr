@@ -77,6 +77,7 @@ add_executable(ray
     ${CMAKE_CURRENT_SOURCE_DIR}/geometry/geometry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/geometry/sphere.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/geometry/plane.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/triangle.cpp
 )
 target_link_libraries(ray 
     PNG::PNG
