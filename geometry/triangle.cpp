@@ -5,8 +5,13 @@
 
 using namespace std;
 
-Triangle::Triangle(const Point& vertex0, const Point& vertex1, const Point& vertex2) 
-    : v0(vertex0), v1(vertex1), v2(vertex2) {
+Triangle::Triangle(const Point& vertex0, const Point& vertex1, const Point& vertex2, const Color& emission_) 
+    : v0(vertex0), v1(vertex1), v2(vertex2), emission(emission_)
+{
+    // Asegura que los valores sean positivos
+    if (emission.r < 0 || emission.g < 0 || emission.b < 0) {
+        throw invalid_argument("Los valores de emision deben ser no negativos");
+    }
     computeNormal();
 }
 

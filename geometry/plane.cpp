@@ -5,7 +5,14 @@
 
 using namespace std;
 
-Plane::Plane(const Direction& normal_, const Point& point_) : normal(normal_), origin(point_) {}
+Plane::Plane(const Direction& normal_, const Point& point_, const Color& emission_)
+    : normal(normal_), origin(point_), emission(emission_)
+{
+    // Asegura que los valores sean positivos
+    if (emission.r < 0 || emission.g < 0 || emission.b < 0) {
+        throw invalid_argument("Los valores de emision deben ser no negativos");
+    }
+}
 
 std::vector<Point> Plane::intersections(const Ray& ray) const {
     vector<Point> intersectionPoints;

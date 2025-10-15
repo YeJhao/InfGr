@@ -59,15 +59,17 @@ int main() {
                 }
                 
                 Point sphereCenter;
-                double spX, spY, spZ, sphereRadius;
+                double spX, spY, spZ, sphereRadius, r, g, b;
                 
                 cout << "Centro de la esfera (x, y, z): ";
                 cin >> spX >> spY >> spZ;
                 sphereCenter = Point(spX, spY, spZ);
                 cout << "Radio: ";
                 cin >> sphereRadius;
+                cout << "Emision (R, G, B): ";
+                cin >> r >> g >> b;
                 
-                shapes[nombre] = make_unique<Sphere>(sphereCenter, sphereRadius);
+                shapes[nombre] = make_unique<Sphere>(sphereCenter, sphereRadius, Color(r, g, b));
                 cout << "Esfera '" << nombre << "' agregada exitosamente." << endl;
                 break;
             }
@@ -86,6 +88,7 @@ int main() {
                 double planeNormalX, planeNormalY, planeNormalZ;
                 Point planePoint;
                 double planePointX, planePointY, planePointZ;
+                double r, g, b;
                 
                 cout << "Normal del plano (dx, dy, dz): ";
                 cin >> planeNormalX >> planeNormalY >> planeNormalZ;
@@ -93,8 +96,10 @@ int main() {
                 cout << "Punto en el plano (x, y, z): ";
                 cin >> planePointX >> planePointY >> planePointZ;
                 planePoint = Point(planePointX, planePointY, planePointZ);
+                cout << "Emision (R, G, B): ";
+                cin >> r >> g >> b;
                 
-                shapes[nombre] = make_unique<Plane>(planeNormal.normalized(), planePoint);
+                shapes[nombre] = make_unique<Plane>(planeNormal.normalized(), planePoint, Color(r, g, b));
                 cout << "Plano '" << nombre << "' agregado exitosamente." << endl;
                 break;
             }

@@ -6,8 +6,14 @@
 
 using namespace std;
 
-Sphere::Sphere(const Point& center_, double radius_) : center(center_), radius(radius_) 
+Sphere::Sphere(const Point& center_, double radius_, const Color& emission_)
+    : center(center_), radius(radius_), emission(emission_) 
 {
+    // Asegura que los valores sean positivos
+    if (emission.r < 0 || emission.g < 0 || emission.b < 0) {
+        throw invalid_argument("Los valores de emision deben ser no negativos");
+    }
+    
     if (radius <= 0) {
         throw invalid_argument("El radio de la esfera debe ser positivo.");
     }
