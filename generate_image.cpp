@@ -9,6 +9,7 @@
 #include <map>
 #include <memory>
 #include <limits>
+#include <random>
 
 using namespace std;
 
@@ -117,6 +118,8 @@ int main() {
                 break;
             }
 
+            // De momento, la cámara está fija en el origen (0,0,0) y con coordenadas (1,1,1),
+            // pero eventualmente tendremos que dar valores al origen y a la dirección de la cámara
             case 5: {
                 cout << "\n=== GENERANDO IMAGEN ===" << endl;
                 
@@ -126,18 +129,103 @@ int main() {
                 // Cámara en el origen
                 Point camera(0, 0, 0);
                 
-                cout << "Generando " << numPixels << " píxeles..." << endl;
                 
+                
+                // Generador de números aleatorios
+                random_device rd;
+                mt19937 gen(rd());
+                uniform_real_distribution<double> dis(0.0, 1.0);
+                
+                const int raysPerPixel = 64; // Número de rayos por píxel para anti-aliasing
+                
+                cout << "Generando " << numPixels << " píxeles con anti-aliasing (" 
+                     << raysPerPixel << " rayos por píxel)..." << endl;
+
                 // Para cada píxel
                 for (int i = 0; i < pixelHeight; ++i) {
+                    for (int j = 0; j < pixelWidth; ++j) {
+                        // Calcular los límites del píxel en coordenadas del mundo
+                        double pixelSizeX = 2.0 / pixelWidth;   // Tamaño de un píxel en X
+                        double pixelSizeY = 2.0 / pixelHeight; // Tamaño de un píxel en Y
+                        
+                        // Esquina inferior-izquierda del píxel
+                        double pixelMinX = -1.0 + j * pixelSizeX;
+                        double pixelMaxX = pixelMinX + pixelSizeX;
+                        double pixelMaxY = 1.0 - i * pixelSizeY;
+                        double pixelMinY = pixelMaxY - pixelSizeY;
+                        
+                        // Acumuladores para el color
+                        double totalR = 0.0, totalG = 0.0, totalB = 0.0;
+                        
+                        // Lanzar múltiples rayos por píxel (Monte Carlo)
+                        for (int ray_sample = 0; ray_sample < raysPerPixel; ++ray_sample) {
+                            // Generar coordenadas aleatorias dentro del píxel
+                            double x = pixelMinX + dis(gen) * pixelSizeX;
+                            double y = pixelMinY + dis(gen) * pixelSizeY;
+                            double z = 1.0;
+                            
+                            // Crear el rayo desde la cámara hacia el punto aleatorio
+                            Point pixelPoint(x, y, z);
+                            Direction rayDirection = pixelPoint - camera;
+                            Ray ray(camera, rayDirection.normalized());
+                            
+                            // Variables para encontrar la intersección más cercana
+                            double minDistance = numeric_limits<double>::max();
+                            Color rayColor(0, 0, 0); // Negro por defecto
+                            
+                            // Comprobar intersección con todas las formas
+                            for (const auto& shape : shapes) {
+                                vector<Point> intersections = ray.intersections(*shape);
+                                
+                                // Para cada intersección, calcular distancia y quedarse con la más cercana
+                                for (const Point& intersection : intersections) {
+                                    Direction toIntersection = intersection - camera;
+                                    double distance = toIntersection.norm();
+                                    
+                                    if (distance < minDistance) {
+                                        minDistance = distance;
+                                        
+                                        // Obtener el color de la forma
+                                        // Usar dynamic_cast para obtener el color específico
+                                        if (auto sphere = dynamic_cast<const Sphere*>(shape.get())) {
+                                            rayColor = Color(sphere->emission.r, sphere->emission.g, sphere->emission.b);
+                                        } else if (auto plane = dynamic_cast<const Plane*>(shape.get())) {
+                                            rayColor = Color(plane->emission.r, plane->emission.g, plane->emission.b);
+                                        } else if (auto triangle = dynamic_cast<const Triangle*>(shape.get())) {
+                                            rayColor = Color(triangle->emission.r, triangle->emission.g, triangle->emission.b);
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Acumular el color de este rayo
+                            totalR += rayColor.r;
+                            totalG += rayColor.g;
+                            totalB += rayColor.b;
+                        }
+                        
+                        // Promediar los colores de todos los rayos
+                        double avgR = totalR / raysPerPixel;
+                        double avgG = totalG / raysPerPixel;
+                        double avgB = totalB / raysPerPixel;
+                        
+                        // Asignar el color promedio al píxel
+                        image.imagen[i][j] = PixelRGB(avgR, avgG, avgB);
+                    }
+                }
+                
+                // Para cada píxel
+                /*for (int i = 0; i < pixelHeight; ++i) {
                     for (int j = 0; j < pixelWidth; ++j) {
                         // Calcular coordenadas del píxel en el plano z=1
                         // Mapear desde índices [0, pixelWidth-1] x [0, pixelHeight-1]
                         // a coordenadas [-1, 1] x [1, -1] (y va de arriba a abajo)
+                    
+                        /* Anterior: 1 rayo/píxel -> en el centrro
                         double x = -1.0 + (2.0 * j) / (pixelWidth - 1);
                         double y = 1.0 - (2.0 * i) / (pixelHeight - 1);
                         double z = 1.0;
-                        
+                                               
                         // Crear el rayo desde la cámara hacia el píxel
                         Point pixelPoint(x, y, z);
                         Direction rayDirection = pixelPoint - camera;
@@ -175,7 +263,7 @@ int main() {
                         // Asignar el color al píxel
                         image.imagen[i][j] = PixelRGB(pixelColor.r, pixelColor.g, pixelColor.b);
                     }
-                }
+                }*/
                 
                 // Guardar la imagen
                 string filename = "generated_image.png";
