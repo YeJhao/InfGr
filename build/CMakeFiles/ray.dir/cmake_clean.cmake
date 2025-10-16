@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "/home/rauls19/Escritorio/4o/InfGr/executables/ray"
   "/home/rauls19/Escritorio/4o/InfGr/executables/ray.pdb"
+  "CMakeFiles/ray.dir/geometry/color.cpp.o"
+  "CMakeFiles/ray.dir/geometry/color.cpp.o.d"
   "CMakeFiles/ray.dir/geometry/geometry.cpp.o"
   "CMakeFiles/ray.dir/geometry/geometry.cpp.o.d"
   "CMakeFiles/ray.dir/geometry/plane.cpp.o"

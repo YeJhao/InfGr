@@ -1,5 +1,7 @@
 /home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/geometry.dir
 /home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/imaging.dir
 /home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/ray.dir
+/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/imaging_lib.dir
+/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/generate_image.dir
 /home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/edit_cache.dir
 /home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/rebuild_cache.dir

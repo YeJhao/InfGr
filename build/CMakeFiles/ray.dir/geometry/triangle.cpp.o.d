@@ -402,5 +402,6 @@ CMakeFiles/ray.dir/geometry/triangle.cpp.o: \
  /usr/include/eigen3/Eigen/src/Eigenvalues/MatrixBaseEigenvalues.h \
  /usr/include/c++/12/iostream \
  /home/rauls19/Escritorio/4o/InfGr/geometry/geometric_shape.hpp \
+ /home/rauls19/Escritorio/4o/InfGr/geometry/color.hpp \
  /home/rauls19/Escritorio/4o/InfGr/geometry/../ray.hpp \
  /home/rauls19/Escritorio/4o/InfGr/geometry/../geometry/geometry.hpp

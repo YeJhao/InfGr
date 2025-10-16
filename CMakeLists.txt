@@ -78,6 +78,7 @@ add_executable(ray
     ${CMAKE_CURRENT_SOURCE_DIR}/geometry/sphere.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/geometry/plane.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/geometry/triangle.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/color.cpp
 )
 target_link_libraries(ray 
     PNG::PNG
@@ -85,6 +86,40 @@ target_link_libraries(ray
     Eigen3::Eigen
 )
 target_include_directories(ray PRIVATE
+    ${OPENEXR_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# Create a library for imaging functions (without main)
+add_library(imaging_lib 
+    ${CMAKE_CURRENT_SOURCE_DIR}/imaging/imaging_lib.cpp
+)
+target_link_libraries(imaging_lib 
+    PNG::PNG
+    ${OPENEXR_LIBRARIES}
+)
+target_include_directories(imaging_lib PRIVATE
+    ${OPENEXR_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# Create executable for generate_image.cpp
+add_executable(generate_image 
+    ${CMAKE_CURRENT_SOURCE_DIR}/generate_image.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ray_lib.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/geometry.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/sphere.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/plane.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/triangle.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/color.cpp
+)
+target_link_libraries(generate_image 
+    imaging_lib
+    PNG::PNG
+    ${OPENEXR_LIBRARIES}
+    Eigen3::Eigen
+)
+target_include_directories(generate_image PRIVATE
     ${OPENEXR_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
 )

@@ -55,4 +55,6 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/geometry.dir/DependInfo.cmake"
   "CMakeFiles/imaging.dir/DependInfo.cmake"
   "CMakeFiles/ray.dir/DependInfo.cmake"
+  "CMakeFiles/imaging_lib.dir/DependInfo.cmake"
+  "CMakeFiles/generate_image.dir/DependInfo.cmake"
   )

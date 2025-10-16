@@ -415,4 +415,5 @@ CMakeFiles/ray.dir/ray.cpp.o: /home/rauls19/Escritorio/4o/InfGr/ray.cpp \
  /home/rauls19/Escritorio/4o/InfGr/geometry/geometry.hpp \
  /home/rauls19/Escritorio/4o/InfGr/geometry/sphere.hpp \
  /home/rauls19/Escritorio/4o/InfGr/geometry/geometric_shape.hpp \
+ /home/rauls19/Escritorio/4o/InfGr/geometry/color.hpp \
  /home/rauls19/Escritorio/4o/InfGr/geometry/plane.hpp

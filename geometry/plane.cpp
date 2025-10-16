@@ -29,5 +29,5 @@ std::vector<Point> Plane::intersections(const Ray& ray) const {
 }
 
 void Plane::print() const {
-    cout << "Plane: normal=" << normal << ", point=" << origin << endl;
+    cout << "Plane:\n  normal=" << normal << ", point=" << origin << endl;
 }

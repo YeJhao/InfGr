@@ -65,6 +65,6 @@ bool Triangle::isPointInside(const Point& p) const {
 }
 
 void Triangle::print() const {
-    cout << "Triangle: v0=" << v0 << ", v1=" << v1 << ", v2=" << v2 
+    cout << "Triangle: \n  v0=" << v0 << ", v1=" << v1 << ", v2=" << v2 
          << ", normal=" << normal << endl;
 }

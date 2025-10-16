@@ -50,5 +50,5 @@ std::vector<Point> Sphere::intersections(const Ray& ray) const {
 }
 
 void Sphere::print() const {
-    cout << "Sphere: center=" << center << ", radius=" << radius << endl;
+    cout << "Sphere:\n  center=" << center << ", radius=" << radius << endl;
 }
