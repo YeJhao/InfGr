@@ -5,6 +5,6 @@
 
 # Ejecutar el programa con el archivo de entrada
 cd /home/rauls19/Escritorio/4o/InfGr
-./executables/generate_image < cornell_box_input.txt
+./executables/generate_image < cornell_box_clase.txt
 #./executables/generate_image < cornell_box_multiview.txt
 #./executables/generate_image < cornell_box_new.txt

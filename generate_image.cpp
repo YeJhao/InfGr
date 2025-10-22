@@ -178,7 +178,7 @@ int main() {
                             // Generar coordenadas aleatorias dentro del píxel en coordenadas de cámara
                             double x = pixelMinX + dis(gen) * pixelSizeX;
                             double y = pixelMinY + dis(gen) * pixelSizeY;
-                            double z = 1.0; // Plano de imagen en z=1 en coordenadas de cámara
+                            double z = 1; // Plano de imagen en z=1 en coordenadas de cámara
                             
                             // Convertir punto del plano de imagen de coordenadas de cámara a mundo
                             Point cameraPixelPoint(x, y, z);

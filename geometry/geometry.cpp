@@ -86,7 +86,7 @@ Direction operator*(double scalar, const Direction& dir) {
 
 // Camera implementations
 Camera::Camera(const Point& origin_, const Direction& u_, const Direction& v_, const Direction& w_)
-    : origin(origin_), u(u_.normalized()), v(v_.normalized()), w(w_.normalized()) {
+    : origin(origin_), u(u_), v(v_), w(w_) {
     
     // Build transformation matrix from camera space to world space
     transformation_matrix(0,0) = u.x(); transformation_matrix(0,1) = v.x(); transformation_matrix(0,2) = w.x(); transformation_matrix(0,3) = origin.x();
