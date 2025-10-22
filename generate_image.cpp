@@ -14,17 +14,9 @@
 using namespace std;
 
 int main() {
-    cout << "Qué anchura tiene la imagen?" << endl;
-    int width;
-    cin >> width;
-    cout << "Qué altura tiene la imagen?" << endl;
-    int height;
-    cin >> height;
-
-    cout << "Cuántos píxeles quieres generar en anchura?" << endl;
+    cout << "Tamaño de la imagen (anchura altura):" << endl;
     int pixelWidth;
     cin >> pixelWidth;
-    cout << "Cuántos píxeles quieres generar en altura?" << endl;
     int pixelHeight;
     cin >> pixelHeight;
 
@@ -65,20 +57,18 @@ int main() {
             case 2: {
                 Direction planeNormal;
                 double planeNormalX, planeNormalY, planeNormalZ;
-                Point planePoint;
-                double planePointX, planePointY, planePointZ;
+                double planeDistance;
                 double r, g, b;
 
                 cout << "Normal del plano (dx, dy, dz): ";
                 cin >> planeNormalX >> planeNormalY >> planeNormalZ;
                 planeNormal = Direction(planeNormalX, planeNormalY, planeNormalZ);
-                cout << "Punto en el plano (x, y, z): ";
-                cin >> planePointX >> planePointY >> planePointZ;
-                planePoint = Point(planePointX, planePointY, planePointZ);
+                cout << "Distancia desde el origen al plano: ";
+                cin >> planeDistance;
                 cout << "Emision (R, G, B): ";
                 cin >> r >> g >> b;
 
-                shapes.push_back(make_unique<Plane>(planeNormal.normalized(), planePoint, Color(r, g, b)));
+                shapes.push_back(make_unique<Plane>(planeNormal.normalized(), planeDistance, Color(r, g, b)));
                 cout << "Plano agregado exitosamente." << endl;
                 break;
             }
@@ -118,18 +108,44 @@ int main() {
                 break;
             }
 
-            // De momento, la cámara está fija en el origen (0,0,0) y con coordenadas (1,1,1),
-            // pero eventualmente tendremos que dar valores al origen y a la dirección de la cámara
+            // Generar imagen con cámara configurable
             case 5: {
+                if (shapes.empty()) {
+                    cout << "No hay formas geométricas creadas. Agregue algunas primero." << endl;
+                    break;
+                }
+                
+                cout << "\n=== CONFIGURACIÓN DE CÁMARA ===" << endl;
+                
+                // Configurar cámara
+                Point cameraOrigin;
+                Direction u, v, w; // vectores base de la cámara
+                double ox, oy, oz;
+                double ux, uy, uz, vx, vy, vz, wx, wy, wz;
+                
+                cout << "Origen de la cámara (x, y, z): ";
+                cin >> ox >> oy >> oz;
+                cameraOrigin = Point(ox, oy, oz);
+                
+                cout << "Vector u (derecha) (x, y, z): ";
+                cin >> ux >> uy >> uz;
+                u = Direction(ux, uy, uz);
+                
+                cout << "Vector v (arriba) (x, y, z): ";
+                cin >> vx >> vy >> vz;
+                v = Direction(vx, vy, vz);
+                
+                cout << "Vector w (adelante) (x, y, z): ";
+                cin >> wx >> wy >> wz;
+                w = Direction(wx, wy, wz);
+                
+                // Crear la cámara
+                Camera camera(cameraOrigin, u, v, w);
+                
                 cout << "\n=== GENERANDO IMAGEN ===" << endl;
                 
                 // Crear la imagen
                 Image image(pixelWidth, pixelHeight);
-                
-                // Cámara en el origen
-                Point camera(0, 0, 0);
-                
-                
                 
                 // Generador de números aleatorios
                 random_device rd;
@@ -148,7 +164,7 @@ int main() {
                         double pixelSizeX = 2.0 / pixelWidth;   // Tamaño de un píxel en X
                         double pixelSizeY = 2.0 / pixelHeight; // Tamaño de un píxel en Y
                         
-                        // Esquina inferior-izquierda del píxel
+                        // Esquina inferior-izquierda del píxel en coordenadas de cámara
                         double pixelMinX = -1.0 + j * pixelSizeX;
                         double pixelMaxX = pixelMinX + pixelSizeX;
                         double pixelMaxY = 1.0 - i * pixelSizeY;
@@ -159,15 +175,18 @@ int main() {
                         
                         // Lanzar múltiples rayos por píxel (Monte Carlo)
                         for (int ray_sample = 0; ray_sample < raysPerPixel; ++ray_sample) {
-                            // Generar coordenadas aleatorias dentro del píxel
+                            // Generar coordenadas aleatorias dentro del píxel en coordenadas de cámara
                             double x = pixelMinX + dis(gen) * pixelSizeX;
                             double y = pixelMinY + dis(gen) * pixelSizeY;
-                            double z = 1.0;
+                            double z = 1.0; // Plano de imagen en z=1 en coordenadas de cámara
                             
-                            // Crear el rayo desde la cámara hacia el punto aleatorio
-                            Point pixelPoint(x, y, z);
-                            Direction rayDirection = pixelPoint - camera;
-                            Ray ray(camera, rayDirection.normalized());
+                            // Convertir punto del plano de imagen de coordenadas de cámara a mundo
+                            Point cameraPixelPoint(x, y, z);
+                            Point worldPixelPoint = camera.cameraToWorld(cameraPixelPoint);
+                            
+                            // Crear el rayo desde el origen de la cámara hacia el punto del píxel
+                            Direction rayDirection = worldPixelPoint - camera.origin;
+                            Ray ray(camera.origin, rayDirection.normalized());
                             
                             // Variables para encontrar la intersección más cercana
                             double minDistance = numeric_limits<double>::max();
@@ -179,7 +198,7 @@ int main() {
                                 
                                 // Para cada intersección, calcular distancia y quedarse con la más cercana
                                 for (const Point& intersection : intersections) {
-                                    Direction toIntersection = intersection - camera;
+                                    Direction toIntersection = intersection - camera.origin;
                                     double distance = toIntersection.norm();
                                     
                                     if (distance < minDistance) {
@@ -212,65 +231,19 @@ int main() {
                         // Asignar el color promedio al píxel
                         image.imagen[i][j] = PixelRGB(avgR, avgG, avgB);
                     }
+                    
+                    // Mostrar progreso cada 10% de las filas
+                    if ((i + 1) % (pixelHeight / 10) == 0 || i == pixelHeight - 1) {
+                        int progress = ((i + 1) * 100) / pixelHeight;
+                        cout << "Progreso: " << progress << "% (" << (i + 1) << "/" << pixelHeight << " filas)" << endl;
+                    }
                 }
                 
-                // Para cada píxel
-                /*for (int i = 0; i < pixelHeight; ++i) {
-                    for (int j = 0; j < pixelWidth; ++j) {
-                        // Calcular coordenadas del píxel en el plano z=1
-                        // Mapear desde índices [0, pixelWidth-1] x [0, pixelHeight-1]
-                        // a coordenadas [-1, 1] x [1, -1] (y va de arriba a abajo)
-                    
-                        /* Anterior: 1 rayo/píxel -> en el centrro
-                        double x = -1.0 + (2.0 * j) / (pixelWidth - 1);
-                        double y = 1.0 - (2.0 * i) / (pixelHeight - 1);
-                        double z = 1.0;
-                                               
-                        // Crear el rayo desde la cámara hacia el píxel
-                        Point pixelPoint(x, y, z);
-                        Direction rayDirection = pixelPoint - camera;
-                        Ray ray(camera, rayDirection.normalized());
-                        
-                        // Variables para encontrar la intersección más cercana
-                        double minDistance = numeric_limits<double>::max();
-                        Color pixelColor(0, 0, 0); // Negro por defecto
-                        
-                        // Comprobar intersección con todas las formas
-                        for (const auto& shape : shapes) {
-                            vector<Point> intersections = ray.intersections(*shape);
-                            
-                            // Para cada intersección, calcular distancia y quedarse con la más cercana
-                            for (const Point& intersection : intersections) {
-                                Direction toIntersection = intersection - camera;
-                                double distance = toIntersection.norm();
-                                
-                                if (distance < minDistance) {
-                                    minDistance = distance;
-                                    
-                                    // Obtener el color de la forma
-                                    // Usar dynamic_cast para obtener el color específico
-                                    if (auto sphere = dynamic_cast<const Sphere*>(shape.get())) {
-                                        pixelColor = Color(sphere->emission.r, sphere->emission.g, sphere->emission.b);
-                                    } else if (auto plane = dynamic_cast<const Plane*>(shape.get())) {
-                                        pixelColor = Color(plane->emission.r, plane->emission.g, plane->emission.b);
-                                    } else if (auto triangle = dynamic_cast<const Triangle*>(shape.get())) {
-                                        pixelColor = Color(triangle->emission.r, triangle->emission.g, triangle->emission.b);
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Asignar el color al píxel
-                        image.imagen[i][j] = PixelRGB(pixelColor.r, pixelColor.g, pixelColor.b);
-                    }
-                }*/
-                
                 // Guardar la imagen
-                string filename = "generated_image.png";
-                cout << "Nombre de la imagen (sin .png): ";
+                cout << "\nNombre de la imagen (sin .png): ";
                 string nameInput;
                 cin >> nameInput;
-                filename = nameInput + ".png";
+                string filename = nameInput + ".png";
                 cout << "Guardando imagen como: " << filename << endl;
                 
                 try {

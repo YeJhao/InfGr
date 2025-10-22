@@ -86,20 +86,18 @@ int main() {
                 
                 Direction planeNormal;
                 double planeNormalX, planeNormalY, planeNormalZ;
-                Point planePoint;
-                double planePointX, planePointY, planePointZ;
+                double planeDistance;
                 double r, g, b;
                 
                 cout << "Normal del plano (dx, dy, dz): ";
                 cin >> planeNormalX >> planeNormalY >> planeNormalZ;
                 planeNormal = Direction(planeNormalX, planeNormalY, planeNormalZ);
-                cout << "Punto en el plano (x, y, z): ";
-                cin >> planePointX >> planePointY >> planePointZ;
-                planePoint = Point(planePointX, planePointY, planePointZ);
+                cout << "Distancia desde el origen al plano: ";
+                cin >> planeDistance;
                 cout << "Emision (R, G, B): ";
                 cin >> r >> g >> b;
                 
-                shapes[nombre] = make_unique<Plane>(planeNormal.normalized(), planePoint, Color(r, g, b));
+                shapes[nombre] = make_unique<Plane>(planeNormal.normalized(), planeDistance, Color(r, g, b));
                 cout << "Plano '" << nombre << "' agregado exitosamente." << endl;
                 break;
             }

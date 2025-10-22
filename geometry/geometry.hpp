@@ -54,6 +54,29 @@ class Direction {
         double z() const;
 };
 
+// Camera class for flexible viewpoint positioning
+class Camera {
+    public:
+        Point origin;      // Posición de la cámara
+        Direction u, v, w; // Vectores base de la cámara (u=right, v=up, w=forward)
+        Matrix4d transformation_matrix;
+        Matrix4d inverse_transformation_matrix;
+
+        Camera(const Point& origin_, const Direction& u_, const Direction& v_, const Direction& w_);
+        
+        // Convert direction from camera coordinates to world coordinates
+        Direction cameraToWorld(const Direction& cameraDir) const;
+        
+        // Convert direction from world coordinates to camera coordinates  
+        Direction worldToCamera(const Direction& worldDir) const;
+        
+        // Convert point from camera coordinates to world coordinates
+        Point cameraToWorld(const Point& cameraPoint) const;
+        
+        // Convert point from world coordinates to camera coordinates
+        Point worldToCamera(const Point& worldPoint) const;
+};
+
 // Global operators
 Direction operator*(double scalar, const Direction& dir);
 std::ostream& operator<<(std::ostream& os, const Point& point);

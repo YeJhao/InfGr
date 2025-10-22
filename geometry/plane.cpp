@@ -5,8 +5,8 @@
 
 using namespace std;
 
-Plane::Plane(const Direction& normal_, const Point& point_, const Color& emission_)
-    : normal(normal_), origin(point_), emission(emission_)
+Plane::Plane(const Direction& normal_, double distance_, const Color& emission_)
+    : normal(normal_.normalized()), distance(distance_), emission(emission_)
 {
     // Asegura que los valores sean positivos
     if (emission.r < 0 || emission.g < 0 || emission.b < 0) {
@@ -19,9 +19,15 @@ std::vector<Point> Plane::intersections(const Ray& ray) const {
     
     double denom = ray.d.dot(normal);
     if (fabs(denom) > 1e-6) { // Ensure the ray is not parallel to the plane
-        double t = (origin - ray.o).dot(normal) / denom;
+        // Ecuación del plano: normal · P + distance = 0
+        // Sustituir P = ray.o + t * ray.d
+        // normal · (ray.o + t * ray.d) + distance = 0
+        // normal · ray.o + t * (normal · ray.d) + distance = 0
+        // t = -(normal · ray.o + distance) / (normal · ray.d)
+        double t = -(normal.dot(Direction(ray.o.coords)) + distance) / denom;
         if (t >= 0) {
-            intersectionPoints.push_back(ray.o + ray.d * t);
+            Point intersection = ray.o + ray.d * t;
+            intersectionPoints.push_back(intersection);
         }
     }
     
@@ -29,5 +35,5 @@ std::vector<Point> Plane::intersections(const Ray& ray) const {
 }
 
 void Plane::print() const {
-    cout << "Plane:\n  normal=" << normal << ", point=" << origin << endl;
+    cout << "Plane:\n  normal=" << normal << ", distance=" << distance << endl;
 }

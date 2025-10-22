@@ -84,6 +84,43 @@ Direction operator*(double scalar, const Direction& dir) {
     return dir * scalar;
 }
 
+// Camera implementations
+Camera::Camera(const Point& origin_, const Direction& u_, const Direction& v_, const Direction& w_)
+    : origin(origin_), u(u_.normalized()), v(v_.normalized()), w(w_.normalized()) {
+    
+    // Build transformation matrix from camera space to world space
+    transformation_matrix(0,0) = u.x(); transformation_matrix(0,1) = v.x(); transformation_matrix(0,2) = w.x(); transformation_matrix(0,3) = origin.x();
+    transformation_matrix(1,0) = u.y(); transformation_matrix(1,1) = v.y(); transformation_matrix(1,2) = w.y(); transformation_matrix(1,3) = origin.y();
+    transformation_matrix(2,0) = u.z(); transformation_matrix(2,1) = v.z(); transformation_matrix(2,2) = w.z(); transformation_matrix(2,3) = origin.z();
+    transformation_matrix(3,0) = 0;     transformation_matrix(3,1) = 0;     transformation_matrix(3,2) = 0;     transformation_matrix(3,3) = 1;
+    
+    inverse_transformation_matrix = transformation_matrix.inverse();
+}
+
+Direction Camera::cameraToWorld(const Direction& cameraDir) const {
+    Vector3d cameraVec(cameraDir.x(), cameraDir.y(), cameraDir.z());
+    Vector3d worldVec = transformation_matrix.block<3,3>(0,0) * cameraVec;
+    return Direction(worldVec);
+}
+
+Direction Camera::worldToCamera(const Direction& worldDir) const {
+    Vector3d worldVec(worldDir.x(), worldDir.y(), worldDir.z());
+    Vector3d cameraVec = inverse_transformation_matrix.block<3,3>(0,0) * worldVec;
+    return Direction(cameraVec);
+}
+
+Point Camera::cameraToWorld(const Point& cameraPoint) const {
+    Vector4d cameraVec(cameraPoint.x(), cameraPoint.y(), cameraPoint.z(), 1.0);
+    Vector4d worldVec = transformation_matrix * cameraVec;
+    return Point(worldVec.x(), worldVec.y(), worldVec.z());
+}
+
+Point Camera::worldToCamera(const Point& worldPoint) const {
+    Vector4d worldVec(worldPoint.x(), worldPoint.y(), worldPoint.z(), 1.0);
+    Vector4d cameraVec = inverse_transformation_matrix * worldVec;
+    return Point(cameraVec.x(), cameraVec.y(), cameraVec.z());
+}
+
 class Planet {
     public:
         // Key points
