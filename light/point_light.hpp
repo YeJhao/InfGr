@@ -1,8 +1,8 @@
-#ifndef POINTLIGHT_HPP
-#define POINTLIGHT_HPP
+#ifndef POINT_LIGHT_HPP
+#define POINT_LIGHT_HPP
 
 #include "geometry/geometry.hpp"
-#include "color.hpp"
+#include "geometry/color.hpp"
 
 class PointLight {
     public:
@@ -12,4 +12,4 @@ class PointLight {
         PointLight(const Point& position_, const Color& intensity_);
 };
 
-#endif // POINTLIGHT_HPP
+#endif // POINT_LIGHT_HPP

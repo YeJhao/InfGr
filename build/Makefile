@@ -415,6 +415,30 @@ imaging/imaging_lib.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/imaging_lib.dir/build.make CMakeFiles/imaging_lib.dir/imaging/imaging_lib.cpp.s
 .PHONY : imaging/imaging_lib.cpp.s
 
+light/point_light.o: light/point_light.cpp.o
+.PHONY : light/point_light.o
+
+# target to build an object file
+light/point_light.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/light/point_light.cpp.o
+.PHONY : light/point_light.cpp.o
+
+light/point_light.i: light/point_light.cpp.i
+.PHONY : light/point_light.i
+
+# target to preprocess a source file
+light/point_light.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/light/point_light.cpp.i
+.PHONY : light/point_light.cpp.i
+
+light/point_light.s: light/point_light.cpp.s
+.PHONY : light/point_light.s
+
+# target to generate assembly for a file
+light/point_light.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/light/point_light.cpp.s
+.PHONY : light/point_light.cpp.s
+
 ray.o: ray.cpp.o
 .PHONY : ray.o
 
@@ -503,6 +527,9 @@ help:
 	@echo "... imaging/imaging_lib.o"
 	@echo "... imaging/imaging_lib.i"
 	@echo "... imaging/imaging_lib.s"
+	@echo "... light/point_light.o"
+	@echo "... light/point_light.i"
+	@echo "... light/point_light.s"
 	@echo "... ray.o"
 	@echo "... ray.i"
 	@echo "... ray.s"

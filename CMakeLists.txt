@@ -112,6 +112,7 @@ add_executable(generate_image
     ${CMAKE_CURRENT_SOURCE_DIR}/geometry/plane.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/geometry/triangle.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/geometry/color.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/light/point_light.cpp
 )
 target_link_libraries(generate_image 
     imaging_lib

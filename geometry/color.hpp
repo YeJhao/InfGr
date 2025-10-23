@@ -9,8 +9,8 @@ class Color {
 
 class CoefficientColor {
     public:
-        double kd, ks, kt; // Coeficientes para kd, ks, kt
-        CoefficientColor(double kd_ = 0.0, double ks_ = 0.0, double kt_ = 0.0);
+        Color kd, ks, kt; // Coeficientes para kd, ks, kt
+        CoefficientColor(Color kd_ = Color(), Color ks_ = Color(), Color kt_ = Color());
 };
 
 #endif // COLOR_HPP

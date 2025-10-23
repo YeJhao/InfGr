@@ -4,6 +4,8 @@
 #include "geometry/plane.hpp"
 #include "geometry/triangle.hpp"
 #include "imaging/imaging.hpp"
+#include "light/point_light.hpp"
+#include "geometry/color.hpp"
 #include <iostream>
 #include <vector>
 #include <map>
@@ -12,6 +14,13 @@
 #include <random>
 
 using namespace std;
+
+
+kd, ks, kt SON COLORES! NO SON DOUBLES
+FUNCIONES PARA SUMAR COLORES, MULTIPLICAR POR ESCALAR, ETC
+MODULAR UN POCO TODO, PARA NO TENER FORS DENTRO DE FORS
+
+
 
 int main() {
     cout << "Tamaño de la imagen (anchura altura):" << endl;
@@ -154,6 +163,19 @@ int main() {
                 // Crear la cámara
                 Camera camera(cameraOrigin, l, u, f);
 
+                cout << "\n=== CONFIGURACIÓN DE LA LUZ ===" << endl;
+                double lightX, lightY, lightZ;
+                double intR, intG, intB;
+                cout << "Posición de la luz (x, y, z): ";
+                cin >> lightX >> lightY >> lightZ;
+                Point lightPosition(lightX, lightY, lightZ);
+                cout << "Intensidad de la luz (R, G, B): ";
+                cin >> intR >> intG >> intB;
+                Color lightIntensity(intR, intG, intB);
+
+                // Crear la fuente de luz (luz puntual)
+                PointLight light(lightPosition, lightIntensity);
+
                 cout << "\n=== GENERANDO IMAGEN ===" << endl;
                 
                 // Crear la imagen
@@ -203,7 +225,8 @@ int main() {
                             
                             // Variables para encontrar la intersección más cercana
                             double minDistance = numeric_limits<double>::max();
-                            Color rayColor(0, 0, 0); // Negro por defecto
+                            GeometricShape* closestShape = nullptr;  
+                            Point closestIntersection = Point(0,0,0);                    
                             
                             // Comprobar intersección con todas las formas
                             for (const auto& shape : shapes) {
@@ -216,24 +239,54 @@ int main() {
                                     
                                     if (distance < minDistance) {
                                         minDistance = distance;
-                                        
-                                        // Obtener el color de la forma
-                                        // Usar dynamic_cast para obtener el color específico
-                                        if (auto sphere = dynamic_cast<const Sphere*>(shape.get())) {
-                                            rayColor = Color(sphere->emission.r, sphere->emission.g, sphere->emission.b);
-                                        } else if (auto plane = dynamic_cast<const Plane*>(shape.get())) {
-                                            rayColor = Color(plane->emission.r, plane->emission.g, plane->emission.b);
-                                        } else if (auto triangle = dynamic_cast<const Triangle*>(shape.get())) {
-                                            rayColor = Color(triangle->emission.r, triangle->emission.g, triangle->emission.b);
-                                        }
+                                        closestShape = shape.get();
+                                        closestIntersection = intersection;
                                     }
                                 }
                             }
-                            
+
+                            Color geometryColor(0, 0, 0); // Negro por defecto
+                            CoefficientColor geometryCoefficients(0, 0, 0);
+                            Direction geometryNormal(0, 0, 0);
+
+                            if (closestShape) {
+                                if (auto sphere = dynamic_cast<const Sphere*>(closestShape)) {
+                                    geometryColor = Color(sphere->emission.r, sphere->emission.g, sphere->emission.b);
+                                    geometryCoefficients = CoefficientColor(sphere->coefficient.kd, sphere->coefficient.ks, sphere->coefficient.kt);
+                                    geometryNormal = closestIntersection - sphere->center;
+                                } else if (auto plane = dynamic_cast<const Plane*>(closestShape)) {
+                                    geometryColor = Color(plane->emission.r, plane->emission.g, plane->emission.b);
+                                    geometryCoefficients = CoefficientColor(plane->coefficient.kd, plane->coefficient.ks, plane->coefficient.kt);
+                                    geometryNormal = plane->normal;
+                                } else if (auto triangle = dynamic_cast<const Triangle*>(closestShape)) {
+                                    geometryColor = Color(triangle->emission.r, triangle->emission.g, triangle->emission.b);
+                                    geometryCoefficients = CoefficientColor(triangle->coefficient.kd, triangle->coefficient.ks, triangle->coefficient.kt);
+                                    Direction edge1 = triangle->v1 - triangle->v0;
+                                    Direction edge2 = triangle->v2 - triangle->v0;
+                                    geometryNormal = edge1.cross(edge2);
+                                }
+                            }
+
+                            // Calcular la iluminación del rayo
+                            // Solo difuso
+                            Direction wi = light.position - closestIntersection; // Intersección a la luz
+                            Direction wo = camera.origin - closestIntersection; // Intersección a la cámara
+
+                            // color.hpp METER OPERACIONES SUMA, PRODUCTO * ESCALAR, ETC  de color
+                            double moduloWi = wi.norm();
+                            double incomingLightR = light.intensity.r / (moduloWi*moduloWi);
+                            double incomingLightG = light.intensity.g / (moduloWi*moduloWi);
+                            double incomingLightB = light.intensity.b / (moduloWi*moduloWi);
+
+                            double fr = geometryCoefficients.kd / M_PI;
+
+                            Direction wi2 = wi/moduloWi;
+                            double coseno = geometryNormal.dot(wi2);
+
                             // Acumular el color de este rayo
-                            totalR += rayColor.r;
-                            totalG += rayColor.g;
-                            totalB += rayColor.b;
+                            totalR += incomingLightR * fr * coseno;
+                            totalG += incomingLightG * fr * coseno;
+                            totalB += incomingLightB * fr * coseno;
                         }
                         
                         // Promediar los colores de todos los rayos

@@ -89,7 +89,7 @@ clean: CMakeFiles/generate_image.dir/clean
 CMakeFiles/geometry.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry.dir/build.make CMakeFiles/geometry.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry.dir/build.make CMakeFiles/geometry.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles --progress-num=9,10,11 "Built target geometry"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles --progress-num=10,11,12 "Built target geometry"
 .PHONY : CMakeFiles/geometry.dir/all
 
 # Build rule for subdir invocation for target.
@@ -115,7 +115,7 @@ CMakeFiles/geometry.dir/clean:
 CMakeFiles/imaging.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/imaging.dir/build.make CMakeFiles/imaging.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/imaging.dir/build.make CMakeFiles/imaging.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles --progress-num=12,13 "Built target imaging"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles --progress-num=13,14 "Built target imaging"
 .PHONY : CMakeFiles/imaging.dir/all
 
 # Build rule for subdir invocation for target.
@@ -141,7 +141,7 @@ CMakeFiles/imaging.dir/clean:
 CMakeFiles/ray.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles --progress-num=16,17,18,19,20,21,22 "Built target ray"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles --progress-num=17,18,19,20,21,22,23 "Built target ray"
 .PHONY : CMakeFiles/ray.dir/all
 
 # Build rule for subdir invocation for target.
@@ -167,7 +167,7 @@ CMakeFiles/ray.dir/clean:
 CMakeFiles/imaging_lib.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/imaging_lib.dir/build.make CMakeFiles/imaging_lib.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/imaging_lib.dir/build.make CMakeFiles/imaging_lib.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles --progress-num=14,15 "Built target imaging_lib"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles --progress-num=15,16 "Built target imaging_lib"
 .PHONY : CMakeFiles/imaging_lib.dir/all
 
 # Build rule for subdir invocation for target.
@@ -193,12 +193,12 @@ CMakeFiles/imaging_lib.dir/clean:
 CMakeFiles/generate_image.dir/all: CMakeFiles/imaging_lib.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8 "Built target generate_image"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9 "Built target generate_image"
 .PHONY : CMakeFiles/generate_image.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/generate_image.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles 10
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles 11
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/generate_image.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles 0
 .PHONY : CMakeFiles/generate_image.dir/rule
