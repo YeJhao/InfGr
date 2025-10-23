@@ -20,6 +20,10 @@ std::vector<Point> Ray::intersections(const GeometricShape& shape) const {
 }
 
 int main() {
+    return 0;
+}
+
+/*int main() {
     cout << "=== SISTEMA DE INTERSECCIÓN CON FORMAS GEOMÉTRICAS ===" << endl;
     cout << "Configuración del rayo:" << endl;
     
@@ -165,4 +169,4 @@ int main() {
     } while (opcion != 0);
 
     return 0;
-}
+}*/

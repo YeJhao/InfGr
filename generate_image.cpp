@@ -42,6 +42,8 @@ int main() {
                 double cx, cy, cz;
                 double radius;
                 double r, g, b;
+                double kd, ks, kt;
+
                 cout << "Centro de la esfera (x, y, z): ";
                 cin >> cx >> cy >> cz;
                 center = Point(cx, cy, cz);
@@ -49,7 +51,10 @@ int main() {
                 cin >> radius;
                 cout << "Emisión (R, G, B): ";
                 cin >> r >> g >> b;
-                shapes.push_back(make_unique<Sphere>(center, radius, Color(r, g, b)));
+                cout << "Coeficientes (kd, ks, kt): ";
+                cin >> kd >> ks >> kt;
+
+                shapes.push_back(make_unique<Sphere>(center, radius, Color(r, g, b), CoefficientColor(kd, ks, kt)));
                 cout << "Esfera agregada exitosamente." << endl;
                 break;
             }
@@ -59,6 +64,7 @@ int main() {
                 double planeNormalX, planeNormalY, planeNormalZ;
                 double planeDistance;
                 double r, g, b;
+                double kd, ks, kt;
 
                 cout << "Normal del plano (dx, dy, dz): ";
                 cin >> planeNormalX >> planeNormalY >> planeNormalZ;
@@ -67,8 +73,10 @@ int main() {
                 cin >> planeDistance;
                 cout << "Emision (R, G, B): ";
                 cin >> r >> g >> b;
+                cout << "Coeficientes (kd, ks, kt): ";
+                cin >> kd >> ks >> kt;
 
-                shapes.push_back(make_unique<Plane>(planeNormal.normalized(), planeDistance, Color(r, g, b)));
+                shapes.push_back(make_unique<Plane>(planeNormal.normalized(), planeDistance, Color(r, g, b), CoefficientColor(kd, ks, kt)));
                 cout << "Plano agregado exitosamente." << endl;
                 break;
             }
@@ -76,6 +84,8 @@ int main() {
             case 3: {
                 double p1x, p1y, p1z, p2x, p2y, p2z, p3x, p3y, p3z;
                 double r, g, b;
+                double kd, ks, kt;
+
                 cout << "Vértices del triángulo (p1 x y z): ";
                 cin >> p1x >> p1y >> p1z;
                 cout << "Vértices del triángulo (p2 x y z): ";
@@ -87,8 +97,10 @@ int main() {
                 Point p3(p3x, p3y, p3z);
                 cout << "Emision (R, G, B): ";
                 cin >> r >> g >> b;
+                cout << "Coeficientes (kd, ks, kt): ";
+                cin >> kd >> ks >> kt;
 
-                shapes.push_back(make_unique<Triangle>(p1, p2, p3, Color(r, g, b)));
+                shapes.push_back(make_unique<Triangle>(p1, p2, p3, Color(r, g, b), CoefficientColor(kd, ks, kt)));
                 cout << "Triángulo agregado exitosamente." << endl;
                 break;
             }
@@ -165,8 +177,8 @@ int main() {
                         double pixelSizeY = 2.0 / pixelHeight; // Tamaño de un píxel en Y
                         
                         // Esquina inferior-izquierda del píxel en coordenadas de cámara
-                        double pixelMinX = -1.0 + j * pixelSizeX;
-                        double pixelMaxX = pixelMinX + pixelSizeX;
+                        double pixelMaxX = 1.0 - j * pixelSizeX;
+                        double pixelMinX = pixelMaxX - pixelSizeX;
                         double pixelMaxY = 1.0 - i * pixelSizeY;
                         double pixelMinY = pixelMaxY - pixelSizeY;
                         

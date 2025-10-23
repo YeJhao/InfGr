@@ -10,9 +10,10 @@ class Sphere : public GeometricShape {
         Point center;
         double radius;
         Color emission;
+        CoefficientColor coefficient;
 
-        Sphere(const Point& center_, double radius_, const Color& emission_);
-        
+        Sphere(const Point& center_, double radius_, const Color& emission_, const CoefficientColor& coefficient_);
+
         // Override the pure virtual method
         std::vector<Point> intersections(const Ray& ray) const override;
         

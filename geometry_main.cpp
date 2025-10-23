@@ -221,6 +221,10 @@ class Connection {
 };
 
 int main() {
+    return 0;
+}
+
+/*int main() {
     try {
         cout << "=== SISTEMA DE CONTROL DE CATAPULTA CUANTICA FTL ===" << endl;
         cout << "FTL Dynamics - Tecnologia hasta 20c" << endl;
@@ -285,4 +289,4 @@ int main() {
     }
     
     return 0;
-}
+}*/
