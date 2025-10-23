@@ -152,7 +152,7 @@ int main() {
                 mt19937 gen(rd());
                 uniform_real_distribution<double> dis(0.0, 1.0);
                 
-                const int raysPerPixel = 64; // Número de rayos por píxel para anti-aliasing
+                const int raysPerPixel = 256; // Número de rayos por píxel para anti-aliasing
                 
                 cout << "Generando " << numPixels << " píxeles con anti-aliasing (" 
                      << raysPerPixel << " rayos por píxel)..." << endl;

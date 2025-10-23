@@ -33,16 +33,21 @@ std::vector<Point> Sphere::intersections(const Ray& ray) const {
         double t1 = (-b - sqrt(discriminant)) / (2.0 * a);
         double t2 = (-b + sqrt(discriminant)) / (2.0 * a);
         
-        if (t1 >= 0) {
+        // Only add intersections with positive t (in front of ray origin)
+        if (t1 > 1e-6) {  // Use small epsilon to avoid self-intersection
             intersectionPoints.push_back(ray.o + ray.d * t1);
         }
-        if (t2 >= 0 && t2 != t1) {
+        if (t2 > 1e-6 && abs(t2 - t1) > 1e-6) {  // Avoid duplicate points
             intersectionPoints.push_back(ray.o + ray.d * t2);
         }
         
-        // Sort intersections so closest is first
-        if (intersectionPoints.size() == 2 && t1 > t2) {
-            swap(intersectionPoints[0], intersectionPoints[1]);
+        // Sort intersections by distance from ray origin (closest first)
+        if (intersectionPoints.size() == 2) {
+            double dist1 = (intersectionPoints[0] - ray.o).norm();
+            double dist2 = (intersectionPoints[1] - ray.o).norm();
+            if (dist1 > dist2) {
+                swap(intersectionPoints[0], intersectionPoints[1]);
+            }
         }
         
         return intersectionPoints;
