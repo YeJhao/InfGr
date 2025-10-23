@@ -85,13 +85,13 @@ Direction operator*(double scalar, const Direction& dir) {
 }
 
 // Camera implementations
-Camera::Camera(const Point& origin_, const Direction& u_, const Direction& v_, const Direction& w_)
-    : origin(origin_), u(u_), v(v_), w(w_) {
-    
+Camera::Camera(const Point& origin_, const Direction& l_, const Direction& u_, const Direction& f_)
+    : origin(origin_), l(l_), u(u_), f(f_) {
+
     // Build transformation matrix from camera space to world space
-    transformation_matrix(0,0) = u.x(); transformation_matrix(0,1) = v.x(); transformation_matrix(0,2) = w.x(); transformation_matrix(0,3) = origin.x();
-    transformation_matrix(1,0) = u.y(); transformation_matrix(1,1) = v.y(); transformation_matrix(1,2) = w.y(); transformation_matrix(1,3) = origin.y();
-    transformation_matrix(2,0) = u.z(); transformation_matrix(2,1) = v.z(); transformation_matrix(2,2) = w.z(); transformation_matrix(2,3) = origin.z();
+    transformation_matrix(0,0) = l.x(); transformation_matrix(0,1) = u.x(); transformation_matrix(0,2) = f.x(); transformation_matrix(0,3) = origin.x();
+    transformation_matrix(1,0) = l.y(); transformation_matrix(1,1) = u.y(); transformation_matrix(1,2) = f.y(); transformation_matrix(1,3) = origin.y();
+    transformation_matrix(2,0) = l.z(); transformation_matrix(2,1) = u.z(); transformation_matrix(2,2) = f.z(); transformation_matrix(2,3) = origin.z();
     transformation_matrix(3,0) = 0;     transformation_matrix(3,1) = 0;     transformation_matrix(3,2) = 0;     transformation_matrix(3,3) = 1;
     
     inverse_transformation_matrix = transformation_matrix.inverse();

@@ -119,29 +119,29 @@ int main() {
                 
                 // Configurar cámara
                 Point cameraOrigin;
-                Direction u, v, w; // vectores base de la cámara
+                Direction l, u, f; // vectores base de la cámara
                 double ox, oy, oz;
-                double ux, uy, uz, vx, vy, vz, wx, wy, wz;
+                double lx, ly, lz, ux, uy, uz, fx, fy, fz;
                 
                 cout << "Origen de la cámara (x, y, z): ";
                 cin >> ox >> oy >> oz;
                 cameraOrigin = Point(ox, oy, oz);
                 
-                cout << "Vector u (derecha) (x, y, z): ";
+                cout << "Vector L (left/izquierda) (x, y, z): ";
+                cin >> lx >> ly >> lz;
+                l = Direction(lx, ly, lz);
+                
+                cout << "Vector U (up/arriba) (x, y, z): ";
                 cin >> ux >> uy >> uz;
                 u = Direction(ux, uy, uz);
-                
-                cout << "Vector v (arriba) (x, y, z): ";
-                cin >> vx >> vy >> vz;
-                v = Direction(vx, vy, vz);
-                
-                cout << "Vector w (adelante) (x, y, z): ";
-                cin >> wx >> wy >> wz;
-                w = Direction(wx, wy, wz);
-                
+
+                cout << "Vector F (front/adelante) (x, y, z): ";
+                cin >> fx >> fy >> fz;
+                f = Direction(fx, fy, fz);
+
                 // Crear la cámara
-                Camera camera(cameraOrigin, u, v, w);
-                
+                Camera camera(cameraOrigin, l, u, f);
+
                 cout << "\n=== GENERANDO IMAGEN ===" << endl;
                 
                 // Crear la imagen
@@ -152,7 +152,7 @@ int main() {
                 mt19937 gen(rd());
                 uniform_real_distribution<double> dis(0.0, 1.0);
                 
-                const int raysPerPixel = 256; // Número de rayos por píxel para anti-aliasing
+                const int raysPerPixel = 4; // Número de rayos por píxel para anti-aliasing
                 
                 cout << "Generando " << numPixels << " píxeles con anti-aliasing (" 
                      << raysPerPixel << " rayos por píxel)..." << endl;
@@ -182,10 +182,11 @@ int main() {
                             
                             // Convertir punto del plano de imagen de coordenadas de cámara a mundo
                             Point cameraPixelPoint(x, y, z);
-                            Point worldPixelPoint = camera.cameraToWorld(cameraPixelPoint);
+                            Point cameraLocalOrigin = Point(0,0,0);
+                            Direction cameraDirection = cameraPixelPoint - cameraLocalOrigin;
+                            Direction rayDirection = camera.cameraToWorld(cameraDirection);
                             
                             // Crear el rayo desde el origen de la cámara hacia el punto del píxel
-                            Direction rayDirection = worldPixelPoint - camera.origin;
                             Ray ray(camera.origin, rayDirection.normalized());
                             
                             // Variables para encontrar la intersección más cercana

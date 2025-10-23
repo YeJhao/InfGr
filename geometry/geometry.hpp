@@ -58,11 +58,11 @@ class Direction {
 class Camera {
     public:
         Point origin;      // Posición de la cámara
-        Direction u, v, w; // Vectores base de la cámara (u=right, v=up, w=forward)
+        Direction l, u, f; // Vectores base de la cámara (l=left, u=up, f=forward)
         Matrix4d transformation_matrix;
         Matrix4d inverse_transformation_matrix;
 
-        Camera(const Point& origin_, const Direction& u_, const Direction& v_, const Direction& w_);
+        Camera(const Point& origin_, const Direction& l_, const Direction& u_, const Direction& f_);
         
         // Convert direction from camera coordinates to world coordinates
         Direction cameraToWorld(const Direction& cameraDir) const;
