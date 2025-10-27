@@ -2,4 +2,20 @@
 
 Color::Color(double r_, double g_, double b_) : r(r_), g(g_), b(b_) {}
 
-CoefficientColor::CoefficientColor(double kd_, double ks_, double kt_) : kd(kd_), ks(ks_), kt(kt_) {}
+Color Color::operator+(const Color& other) const {
+    return Color(r + other.r, g + other.g, b + other.b);
+}
+
+Color Color::operator-(const Color& other) const {
+    return Color(r - other.r, g - other.g, b - other.b);
+}
+
+Color Color::operator*(double scalar) const {
+    return Color(r * scalar, g * scalar, b * scalar);
+}
+
+Color Color::operator/(double scalar) const {
+    return Color(r / scalar, g / scalar, b / scalar);
+}
+
+CoefficientColor::CoefficientColor(Color kd_, Color ks_, Color kt_) : kd(kd_), ks(ks_), kt(kt_) {}
