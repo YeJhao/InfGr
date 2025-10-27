@@ -14,7 +14,9 @@ Sphere::Sphere(const Point& center_, double radius_, const Color& emission_, con
         throw invalid_argument("Los valores de emision deben ser no negativos");
     }
 
-    if (coefficient.kd < 0 || coefficient.ks < 0 || coefficient.kt < 0) {
+    if (coefficient.kd.r < 0 || coefficient.kd.g < 0 || coefficient.kd.b < 0
+        || coefficient.ks.r < 0 || coefficient.ks.g < 0 || coefficient.ks.b < 0
+        || coefficient.kt.r < 0 || coefficient.kt.g < 0 || coefficient.kt.b < 0) {
         throw invalid_argument("Los coeficientes de color deben ser no negativos");
     }
     

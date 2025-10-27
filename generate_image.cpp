@@ -15,12 +15,38 @@
 
 using namespace std;
 
-
+/*
 kd, ks, kt SON COLORES! NO SON DOUBLES
 FUNCIONES PARA SUMAR COLORES, MULTIPLICAR POR ESCALAR, ETC
 MODULAR UN POCO TODO, PARA NO TENER FORS DENTRO DE FORS
+*/
 
+/*
+ * Pre:  Text
+ * Post: Text
+ */
+void checkIntersections(vector<unique_ptr<GeometricShape>> shapes, Ray ray, Camera camera) {
+    // Variables para encontrar la intersección más cercana
+    double minDistance = numeric_limits<double>::max();
+    GeometricShape* closestShape = nullptr;  
+    Point closestIntersection = Point(0,0,0);
 
+    for (const auto& shape : shapes) {
+        vector<Point> intersections = ray.intersections(*shape);
+        
+        // Para cada intersección, calcular distancia y quedarse con la más cercana
+        for (const Point& intersection : intersections) {
+            Direction toIntersection = intersection - camera.origin;
+            double distance = toIntersection.norm();
+            
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestShape = shape.get();
+                closestIntersection = intersection;
+            }
+        }
+    }
+}
 
 int main() {
     cout << "Tamaño de la imagen (anchura altura):" << endl;
@@ -51,7 +77,7 @@ int main() {
                 double cx, cy, cz;
                 double radius;
                 double r, g, b;
-                double kd, ks, kt;
+                double k_r, k_g, k_b;
 
                 cout << "Centro de la esfera (x, y, z): ";
                 cin >> cx >> cy >> cz;
@@ -60,8 +86,15 @@ int main() {
                 cin >> radius;
                 cout << "Emisión (R, G, B): ";
                 cin >> r >> g >> b;
-                cout << "Coeficientes (kd, ks, kt): ";
-                cin >> kd >> ks >> kt;
+                cout << "Coeficiente kd (R, G, B): ";
+                cin >> k_r >> k_g >> k_b;
+                Color kd(k_r, k_g, k_b);
+                cout << "Coeficiente ks (R, G, B): ";
+                cin >> k_r >> k_g >> k_b;
+                Color ks(k_r, k_g, k_b);
+                cout << "Coeficiente kt (R, G, B): ";
+                cin >> k_r >> k_g >> k_b;
+                Color kt(k_r, k_g, k_b);
 
                 shapes.push_back(make_unique<Sphere>(center, radius, Color(r, g, b), CoefficientColor(kd, ks, kt)));
                 cout << "Esfera agregada exitosamente." << endl;
@@ -73,7 +106,7 @@ int main() {
                 double planeNormalX, planeNormalY, planeNormalZ;
                 double planeDistance;
                 double r, g, b;
-                double kd, ks, kt;
+                double k_r, k_g, k_b;
 
                 cout << "Normal del plano (dx, dy, dz): ";
                 cin >> planeNormalX >> planeNormalY >> planeNormalZ;
@@ -82,8 +115,15 @@ int main() {
                 cin >> planeDistance;
                 cout << "Emision (R, G, B): ";
                 cin >> r >> g >> b;
-                cout << "Coeficientes (kd, ks, kt): ";
-                cin >> kd >> ks >> kt;
+                cout << "Coeficiente kd (R, G, B): ";
+                cin >> k_r >> k_g >> k_b;
+                Color kd(k_r, k_g, k_b);
+                cout << "Coeficiente ks (R, G, B): ";
+                cin >> k_r >> k_g >> k_b;
+                Color ks(k_r, k_g, k_b);
+                cout << "Coeficiente kt (R, G, B): ";
+                cin >> k_r >> k_g >> k_b;
+                Color kt(k_r, k_g, k_b);
 
                 shapes.push_back(make_unique<Plane>(planeNormal.normalized(), planeDistance, Color(r, g, b), CoefficientColor(kd, ks, kt)));
                 cout << "Plano agregado exitosamente." << endl;
@@ -93,7 +133,7 @@ int main() {
             case 3: {
                 double p1x, p1y, p1z, p2x, p2y, p2z, p3x, p3y, p3z;
                 double r, g, b;
-                double kd, ks, kt;
+                double k_r, k_g, k_b;
 
                 cout << "Vértices del triángulo (p1 x y z): ";
                 cin >> p1x >> p1y >> p1z;
@@ -106,8 +146,15 @@ int main() {
                 Point p3(p3x, p3y, p3z);
                 cout << "Emision (R, G, B): ";
                 cin >> r >> g >> b;
-                cout << "Coeficientes (kd, ks, kt): ";
-                cin >> kd >> ks >> kt;
+                cout << "Coeficiente kd (R, G, B): ";
+                cin >> k_r >> k_g >> k_b;
+                Color kd(k_r, k_g, k_b);
+                cout << "Coeficiente ks (R, G, B): ";
+                cin >> k_r >> k_g >> k_b;
+                Color ks(k_r, k_g, k_b);
+                cout << "Coeficiente kt (R, G, B): ";
+                cin >> k_r >> k_g >> k_b;
+                Color kt(k_r, k_g, k_b);
 
                 shapes.push_back(make_unique<Triangle>(p1, p2, p3, Color(r, g, b), CoefficientColor(kd, ks, kt)));
                 cout << "Triángulo agregado exitosamente." << endl;
@@ -188,6 +235,8 @@ int main() {
                 
                 const int raysPerPixel = 4; // Número de rayos por píxel para anti-aliasing
                 
+                CoefficientColor geometryCoefficients;
+
                 cout << "Generando " << numPixels << " píxeles con anti-aliasing (" 
                      << raysPerPixel << " rayos por píxel)..." << endl;
 
@@ -229,6 +278,8 @@ int main() {
                             Point closestIntersection = Point(0,0,0);                    
                             
                             // Comprobar intersección con todas las formas
+                            // TODO: Seguir con el check
+                            //checkIntersections(shapes, ray, camera);
                             for (const auto& shape : shapes) {
                                 vector<Point> intersections = ray.intersections(*shape);
                                 
@@ -246,7 +297,7 @@ int main() {
                             }
 
                             Color geometryColor(0, 0, 0); // Negro por defecto
-                            CoefficientColor geometryCoefficients(0, 0, 0);
+                            geometryCoefficients = CoefficientColor();
                             Direction geometryNormal(0, 0, 0);
 
                             if (closestShape) {
@@ -278,15 +329,15 @@ int main() {
                             double incomingLightG = light.intensity.g / (moduloWi*moduloWi);
                             double incomingLightB = light.intensity.b / (moduloWi*moduloWi);
 
-                            double fr = geometryCoefficients.kd / M_PI;
+                            Color fr = geometryCoefficients.kd / M_PI;
 
                             Direction wi2 = wi/moduloWi;
                             double coseno = geometryNormal.dot(wi2);
 
                             // Acumular el color de este rayo
-                            totalR += incomingLightR * fr * coseno;
-                            totalG += incomingLightG * fr * coseno;
-                            totalB += incomingLightB * fr * coseno;
+                            totalR += incomingLightR * fr.r * coseno;
+                            totalG += incomingLightG * fr.g * coseno;
+                            totalB += incomingLightB * fr.b * coseno;
                         }
                         
                         // Promediar los colores de todos los rayos
