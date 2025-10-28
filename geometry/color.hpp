@@ -9,14 +9,13 @@ class Color {
         // Operaciones para colores
         Color operator+(const Color& other) const;
         Color operator-(const Color& other) const;
+        Color operator*(const Color& other) const;
+        Color operator/(const Color& other) const;
+        
+        Color operator+(double scalar) const;
+        Color operator-(double scalar) const;
         Color operator*(double scalar) const;
         Color operator/(double scalar) const;
-};
-
-class CoefficientColor {
-    public:
-        Color kd, ks, kt; // Coeficientes para kd, ks, kt
-        CoefficientColor(Color kd_ = Color(), Color ks_ = Color(), Color kt_ = Color());
 };
 
 #endif // COLOR_HPP

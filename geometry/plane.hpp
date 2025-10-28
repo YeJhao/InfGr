@@ -10,9 +10,10 @@ class Plane : public GeometricShape {
         Direction normal;
         double distance; // Distancia con signo desde el origen al plano
         Color emission;
-        CoefficientColor coefficient;
+        Color kd, ks, kt;
 
-        Plane(const Direction& normal_, double distance_, const Color& emission_, const CoefficientColor& coefficient_);
+        Plane(const Direction& normal_, double distance_, const Color& emission_, 
+              const Color& kd_, const Color& ks_, const Color& kt_);
 
         // Override the pure virtual method
         std::vector<Point> intersections(const Ray& ray) const override;

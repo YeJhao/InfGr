@@ -10,12 +10,16 @@ class Sphere : public GeometricShape {
         Point center;
         double radius;
         Color emission;
-        CoefficientColor coefficient;
+        Color kd, ks, kt;
 
-        Sphere(const Point& center_, double radius_, const Color& emission_, const CoefficientColor& coefficient_);
+        Sphere(const Point& center_, double radius_, const Color& emission_, 
+               const Color& kd_, const Color& ks_, const Color& kt_);
 
         // Override the pure virtual method
         std::vector<Point> intersections(const Ray& ray) const override;
+        
+        // Calculate normal at a given point on the sphere surface
+        Direction calculateNormalAtPoint(const Point& p) const;
         
         // Override the print method
         void print() const override;

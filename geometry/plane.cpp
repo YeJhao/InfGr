@@ -5,17 +5,19 @@
 
 using namespace std;
 
-Plane::Plane(const Direction& normal_, double distance_, const Color& emission_, const CoefficientColor& coefficient_)
-    : normal(normal_.normalized()), distance(distance_), emission(emission_), coefficient(coefficient_)
+Plane::Plane(const Direction& normal_, double distance_, const Color& emission_, 
+             const Color& kd_, const Color& ks_, const Color& kt_)
+    : normal(normal_.normalized()), distance(distance_), emission(emission_), 
+      kd(kd_), ks(ks_), kt(kt_)
 {
     // Asegura que los valores sean positivos
     if (emission.r < 0 || emission.g < 0 || emission.b < 0) {
         throw invalid_argument("Los valores de emision deben ser no negativos");
     }
 
-    if (coefficient.kd.r < 0 || coefficient.kd.g < 0 || coefficient.kd.b < 0
-        || coefficient.ks.r < 0 || coefficient.ks.g < 0 || coefficient.ks.b < 0
-        || coefficient.kt.r < 0 || coefficient.kt.g < 0 || coefficient.kt.b < 0) {
+    if (kd.r < 0 || kd.g < 0 || kd.b < 0 || 
+        ks.r < 0 || ks.g < 0 || ks.b < 0 || 
+        kt.r < 0 || kt.g < 0 || kt.b < 0) {
         throw invalid_argument("Los coeficientes de color deben ser no negativos");
     }
 }
@@ -41,5 +43,9 @@ std::vector<Point> Plane::intersections(const Ray& ray) const {
 }
 
 void Plane::print() const {
-    cout << "Plane:\n  normal=" << normal << ", distance=" << distance << endl;
+    cout << "Plane:\n  normal=" << normal << ", distance=" << distance << 
+    ", emission=" << emission.r << ", " << emission.g << ", " << emission.b << 
+    ", kd=" << kd.r << ", " << kd.g << ", " << kd.b << 
+    ", ks=" << ks.r << ", " << ks.g << ", " << ks.b << 
+    ", kt=" << kt.r << ", " << kt.g << ", " << kt.b << endl;
 }

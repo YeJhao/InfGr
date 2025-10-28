@@ -10,9 +10,10 @@ class Triangle : public GeometricShape {
         Point v0, v1, v2; // The three vertices of the triangle
         Direction normal; // Normal vector (computed from vertices)
         Color emission;  // Emission color of the triangle
-        CoefficientColor coefficient; // Coefficients for the triangle
+        Color kd, ks, kt; // Coefficients for the triangle
 
-        Triangle(const Point& vertex0, const Point& vertex1, const Point& vertex2, const Color& emission_, const CoefficientColor& coefficient_);
+        Triangle(const Point& vertex0, const Point& vertex1, const Point& vertex2, const Color& emission_, 
+                 const Color& kd_, const Color& ks_, const Color& kt_);
 
         // Override the pure virtual method
         std::vector<Point> intersections(const Ray& ray) const override;
