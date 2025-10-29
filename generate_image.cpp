@@ -3,6 +3,7 @@
 #include "geometry/sphere.hpp"
 #include "geometry/plane.hpp"
 #include "geometry/triangle.hpp"
+#include "geometry/bsdf_utils.hpp"
 #include "imaging/imaging.hpp"
 #include "light/point_light.hpp"
 #include "geometry/color.hpp"
@@ -274,7 +275,6 @@ int main() {
                         double pixelMinY = pixelMaxY - pixelSizeY;
                         
                         // Acumuladores para el color
-                        //double totalR = 0.0, totalG = 0.0, totalB = 0.0;
                         Color total(0, 0, 0);
 
                         // Lanzar múltiples rayos por píxel (Monte Carlo)
@@ -343,34 +343,59 @@ int main() {
                                 }
                             }
 
-                            // Calcular la iluminación del rayo
-                            // Solo difuso
-                            Direction wi = light.position - closestIntersection; // Intersección a la luz
-                            Direction wo = camera.origin - closestIntersection; // Intersección a la cámara
-
-                            // color.hpp METER OPERACIONES SUMA, PRODUCTO * ESCALAR, ETC  de color
-                            double moduloWi = wi.norm();
-                            Color incomingLight = light.intensity / (moduloWi * moduloWi);
-                            //double incomingLightR = light.intensity.r / (moduloWi*moduloWi);
-                            //double incomingLightG = light.intensity.g / (moduloWi*moduloWi);
-                            //double incomingLightB = light.intensity.b / (moduloWi*moduloWi);
-
-                            Color fr = geometryKd / M_PI;
-
-                            Direction wi2 = wi/moduloWi;
-                            double coseno = geometryNormal.dot(wi2);
-
-                            // Acumular el color de este rayo
-                            //totalR += incomingLightR * fr.r * coseno;
-                            //totalG += incomingLightG * fr.g * coseno;
-                            //totalB += incomingLightB * fr.b * coseno;
-                            total = total + (incomingLight * fr * coseno);
+                            // Calcular la iluminación del rayo usando BSDF completa
+                            if (closestShape) {
+                                // Si el objeto emite luz, usar solo la emisión
+                                if (geometryColor.r > 0 || geometryColor.g > 0 || geometryColor.b > 0) {
+                                    total = total + geometryColor;
+                                } else {
+                                    // Objeto reflectante - calcular iluminación
+                                    Direction wi = (light.position - closestIntersection); // Dirección a la luz
+                                    double distanceToLight = wi.norm();
+                                    wi = wi / distanceToLight; // Normalizar
+                                    
+                                    Direction wo = (camera.origin - closestIntersection).normalized(); // Dirección a la cámara
+                                    
+                                    // Luz incidente atenuada por distancia (ley del inverso del cuadrado)
+                                    Color incomingLight = light.intensity / (distanceToLight * distanceToLight);
+                                    
+                                    // Factor geométrico: cos(θ) entre normal y dirección de la luz
+                                    double cosTheta = std::max(0.0, geometryNormal.dot(wi));
+                                    
+                                    // Inicializar BSDF
+                                    Color fr(0, 0, 0);
+                                    
+                                    // 1. Componente difuso (BRDF Lambertiana)
+                                    Color fr_diffuse = geometryKd * (1.0 / M_PI);
+                                    fr = fr + fr_diffuse;
+                                    
+                                    // 2. Componente especular (reflexión perfecta)
+                                    // Solo contribuye si la dirección incidente coincide con la reflexión perfecta
+                                    // En path tracing esto se maneja con muestreo de importancia
+                                    // Por ahora, añadimos una aproximación básica usando el modelo de Phong
+                                    if (geometryKs.r > 0 || geometryKs.g > 0 || geometryKs.b > 0) {
+                                        Direction wr = perfectReflection(wo, geometryNormal);
+                                        double specDot = std::max(0.0, wr.dot(wi));
+                                        // Exponente especular alto para simular reflexión casi perfecta
+                                        double specular = std::pow(specDot, 100.0);
+                                        fr = fr + (geometryKs * specular);
+                                    }
+                                    
+                                    // 3. Componente de transmisión (refracción)
+                                    // La refracción se maneja típicamente en path tracing con trazado recursivo
+                                    // Por ahora lo dejamos para la siguiente fase del proyecto
+                                    
+                                    // Ecuación de rendering: Lo = ∫ Li * fr * cos(θ) dω
+                                    // Versión simplificada para luz puntual única:
+                                    Color Lo = incomingLight * fr * cosTheta;
+                                    
+                                    // Acumular el color de este rayo
+                                    total = total + Lo;
+                                }
+                            }
                         }
                         
                         // Promediar los colores de todos los rayos
-                        //double avgR = totalR / raysPerPixel;
-                        //double avgG = totalG / raysPerPixel;
-                        //double avgB = totalB / raysPerPixel;
                         Color avg = total / static_cast<double>(raysPerPixel);
 
                         // Asignar el color promedio al píxel

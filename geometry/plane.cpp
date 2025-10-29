@@ -20,6 +20,13 @@ Plane::Plane(const Direction& normal_, double distance_, const Color& emission_,
         kt.r < 0 || kt.g < 0 || kt.b < 0) {
         throw invalid_argument("Los coeficientes de color deben ser no negativos");
     }
+    
+    // Validar que la suma de coeficientes no exceda 1 en cada canal
+    if (kd.r + ks.r + kt.r > 1.0 || 
+        kd.g + ks.g + kt.g > 1.0 || 
+        kd.b + ks.b + kt.b > 1.0) {
+        throw invalid_argument("La suma de coeficientes (kd + ks + kt) debe ser <= 1 en cada canal RGB");
+    }
 }
 
 std::vector<Point> Plane::intersections(const Ray& ray) const {
