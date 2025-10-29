@@ -4,6 +4,7 @@
 #include "geometry/plane.hpp"
 #include "geometry/triangle.hpp"
 #include "geometry/bsdf_utils.hpp"
+#include "path_tracing.hpp"
 #include "imaging/imaging.hpp"
 #include "light/point_light.hpp"
 #include "geometry/color.hpp"
@@ -16,11 +17,11 @@
 
 using namespace std;
 
-/*
-kd, ks, kt SON COLORES! NO SON DOUBLES
-FUNCIONES PARA SUMAR COLORES, MULTIPLICAR POR ESCALAR, ETC
-MODULAR UN POCO TODO, PARA NO TENER FORS DENTRO DE FORS
-*/
+// Configuración de Path Tracing
+#define raysPerPixel 64         // Muestras por píxel (anti-aliasing)
+#define maxBounces 100          // Límite de seguridad, Russian Roulette terminará antes
+#define RR_MIN_DEPTH 2         // Profundidad mínima antes de aplicar Russian Roulette
+#define RR_STOP_PROB 0.04      // Probabilidad de terminar en la Russian Roulette
 
 /*
  * Pre:  Text
@@ -244,8 +245,14 @@ int main() {
 
                 // Crear la fuente de luz (luz puntual)
                 PointLight light(lightPosition, lightIntensity);
+                
+                // Vector de luces para path tracing
+                vector<PointLight> lights;
+                lights.push_back(light);
 
                 cout << "\n=== GENERANDO IMAGEN ===" << endl;
+                cout << "Path tracing con " << maxBounces << " rebotes máximos y " 
+                     << raysPerPixel << " rayos por píxel" << endl;
                 
                 // Crear la imagen
                 Image image(pixelWidth, pixelHeight);
@@ -254,12 +261,6 @@ int main() {
                 random_device rd;
                 mt19937 gen(rd());
                 uniform_real_distribution<double> dis(0.0, 1.0);
-                
-                const int raysPerPixel = 4; // Número de rayos por píxel para anti-aliasing
-                
-                Color geometryKd(0, 0, 0);
-                Color geometryKs(0, 0, 0);
-                Color geometryKt(0, 0, 0);
 
                 // Para cada píxel
                 for (int i = 0; i < pixelHeight; ++i) {
@@ -293,6 +294,7 @@ int main() {
                             // Crear el rayo desde el origen de la cámara hacia el punto del píxel
                             Ray ray(camera.origin, rayDirection.normalized());
                             
+                            /*
                             // Variables para encontrar la intersección más cercana
                             double minDistance = numeric_limits<double>::max();
                             GeometricShape* closestShape = nullptr;  
@@ -366,33 +368,22 @@ int main() {
                                     Color fr(0, 0, 0);
                                     
                                     // 1. Componente difuso (BRDF Lambertiana)
-                                    Color fr_diffuse = geometryKd * (1.0 / M_PI);
-                                    fr = fr + fr_diffuse;
-                                    
-                                    // 2. Componente especular (reflexión perfecta)
-                                    // Solo contribuye si la dirección incidente coincide con la reflexión perfecta
-                                    // En path tracing esto se maneja con muestreo de importancia
-                                    // Por ahora, añadimos una aproximación básica usando el modelo de Phong
-                                    if (geometryKs.r > 0 || geometryKs.g > 0 || geometryKs.b > 0) {
-                                        Direction wr = perfectReflection(wo, geometryNormal);
-                                        double specDot = std::max(0.0, wr.dot(wi));
-                                        // Exponente especular alto para simular reflexión casi perfecta
-                                        double specular = std::pow(specDot, 100.0);
-                                        fr = fr + (geometryKs * specular);
-                                    }
-                                    
-                                    // 3. Componente de transmisión (refracción)
-                                    // La refracción se maneja típicamente en path tracing con trazado recursivo
-                                    // Por ahora lo dejamos para la siguiente fase del proyecto
-                                    
+                                    fr = fr + geometryKd;
+                                                           
                                     // Ecuación de rendering: Lo = ∫ Li * fr * cos(θ) dω
                                     // Versión simplificada para luz puntual única:
-                                    Color Lo = incomingLight * fr * cosTheta;
+                                    Color Lo = incomingLight * fr;
                                     
                                     // Acumular el color de este rayo
                                     total = total + Lo;
                                 }
-                            }
+                            }*/
+                            // Trazar el rayo con path tracing recursivo
+                            Color rayColor = pathTrace(ray, shapes, lights, gen, dis, 0, maxBounces, 
+                                                      RR_MIN_DEPTH, RR_STOP_PROB);
+                            
+                            // Acumular el color de este rayo
+                            total = total + rayColor;
                         }
                         
                         // Promediar los colores de todos los rayos
@@ -405,7 +396,14 @@ int main() {
                     // Mostrar progreso cada 10% de las filas
                     if ((i + 1) % (pixelHeight / 10) == 0 || i == pixelHeight - 1) {
                         int progress = ((i + 1) * 100) / pixelHeight;
-                        cout << "Progreso: " << progress << "% (" << (i + 1) << "/" << pixelHeight << " filas)" << endl;
+                        
+                        // Obtener la hora actual
+                        auto now = std::chrono::system_clock::now();
+                        auto time_t = std::chrono::system_clock::to_time_t(now);
+                        auto tm = *std::localtime(&time_t);
+                        
+                        cout << "Progreso: " << progress << "% (" << (i + 1) << "/" << pixelHeight << " filas) - " 
+                             << std::put_time(&tm, "%H:%M:%S") << endl;
                     }
                 }
                 

@@ -1,0 +1,305 @@
+#ifndef PATH_TRACING_HPP
+#define PATH_TRACING_HPP
+
+#include "ray.hpp"
+#include "geometry/geometric_shape.hpp"
+#include "geometry/sphere.hpp"
+#include "geometry/plane.hpp"
+#include "geometry/triangle.hpp"
+#include "geometry/bsdf_utils.hpp"
+#include "geometry/color.hpp"
+#include "light/point_light.hpp"
+#include <vector>
+#include <memory>
+#include <random>
+#include <limits>
+#include <cmath>
+
+using namespace std;
+
+// Estructura para almacenar información de intersección
+struct HitInfo {
+    bool hit;
+    Point point;
+    Direction normal;
+    Color emission;
+    Color kd;
+    Color ks;
+    Color kt;
+    GeometricShape* shape;
+    
+    // Constructor básico, por defecto
+    HitInfo() : hit(false), shape(nullptr) {}
+};
+
+/**
+ * Encuentra la intersección más cercana entre un rayo y la escena
+ */
+inline HitInfo findClosestIntersection(const Ray& ray, const vector<unique_ptr<GeometricShape>>& shapes, const Point& rayOrigin) {
+    HitInfo hitInfo;
+    double minDistance = numeric_limits<double>::max();
+    
+    for (const auto& shape : shapes) {
+        vector<Point> intersections = ray.intersections(*shape);
+        
+        for (const Point& intersection : intersections) {
+            Direction toIntersection = intersection - rayOrigin;
+            double distance = toIntersection.norm();
+            
+            if (distance < minDistance && distance > 1e-4) { // Epsilon para evitar auto-intersección
+                minDistance = distance;
+                hitInfo.hit = true;
+                hitInfo.point = intersection;
+                hitInfo.shape = shape.get();
+                
+                // Extraer propiedades del material usando dynamic_cast
+                if (auto sphere = dynamic_cast<const Sphere*>(shape.get())) {
+                    hitInfo.emission = sphere->emission;
+                    hitInfo.kd = sphere->kd;
+                    hitInfo.ks = sphere->ks;
+                    hitInfo.kt = sphere->kt;
+                    hitInfo.normal = sphere->calculateNormalAtPoint(intersection);
+                } else if (auto plane = dynamic_cast<const Plane*>(shape.get())) {
+                    hitInfo.emission = plane->emission;
+                    hitInfo.kd = plane->kd;
+                    hitInfo.ks = plane->ks;
+                    hitInfo.kt = plane->kt;
+                    hitInfo.normal = plane->normal;
+                } else if (auto triangle = dynamic_cast<const Triangle*>(shape.get())) {
+                    hitInfo.emission = triangle->emission;
+                    hitInfo.kd = triangle->kd;
+                    hitInfo.ks = triangle->ks;
+                    hitInfo.kt = triangle->kt;
+                    hitInfo.normal = triangle->normal;
+                }
+            }
+        }
+    }
+    
+    return hitInfo;
+}
+
+/**
+ * Comprueba si hay visibilidad entre dos puntos (para rayos de sombra)
+ * @param from Punto de origen
+ * @param to Punto destino 
+ * @param shapes Geometrías de la escena
+ * @return true si no hay obstrucciones, false si hay algo entre ambos puntos
+ */
+inline bool isVisible(const Point& from, const Point& to, const vector<unique_ptr<GeometricShape>>& shapes) {
+    Direction dir = to - from;
+    double maxDistance = dir.norm();
+    dir = dir / maxDistance; // Normalizar
+    
+    Ray shadowRay(from, dir);
+    
+    for (const auto& shape : shapes) {
+        vector<Point> intersections = shadowRay.intersections(*shape);
+        for (const Point& intersection : intersections) {
+            double distance = (intersection - from).norm();
+            // Si hay algo entre el punto y la luz (con un pequeño margen)
+            if (distance > 1e-4 && distance < maxDistance - 1e-4) {
+                return false; // Bloqueado
+            }
+        }
+    }
+    
+    return true; // Visible
+}
+
+/**
+ * Genera una dirección aleatoria en el hemisferio según distribución de coseno
+ * Usado para muestreo de BRDF difusa
+ */
+inline Direction cosineSampleHemisphere(mt19937& gen, uniform_real_distribution<double>& dis) {
+    // Generación de números aleatorios
+    double u1 = dis(gen);
+    double u2 = dis(gen);
+
+    // r = sen(θᵢ) = sqrt(u1)
+    double r = sqrt(u1);
+    double phi = 2.0 * M_PI * u2;
+    
+    double x = r * cos(phi);
+    double y = r * sin(phi);
+    double z = sqrt(1.0 - u1);
+    
+    return Direction(x, y, z);
+}
+
+/**
+ * Construye una base ortonormal a partir de un vector normal
+ */
+inline void buildOrthonormalBasis(const Direction& n, Direction& tangent, Direction& bitangent) {
+    // Elegir un vector que no sea paralelo a n
+    Direction up = (fabs(n.d[0]) > 0.9) ? Direction(0, 1, 0) : Direction(1, 0, 0);
+    tangent = n.cross(up).normalized();
+    bitangent = n.cross(tangent).normalized();
+}
+
+/**
+ * Transforma una dirección del espacio local (respecto a la normal) al espacio mundial
+ */
+inline Direction localToWorld(const Direction& localDir, const Direction& normal, const Direction& tangent, const Direction& bitangent) {
+    return (tangent * localDir.d[0] + 
+            bitangent * localDir.d[1] + 
+            normal * localDir.d[2]).normalized();
+}
+
+/**
+ * Calcula la radiancia entrante mediante path tracing recursivo
+ * @param ray Rayo actual
+ * @param shapes Geometrías de la escena
+ * @param lights Luces de la escena
+ * @param gen Generador de números aleatorios
+ * @param dis Distribución uniforme [0,1]
+ * @param depth Profundidad actual de recursión
+ * @param maxDepth Profundidad máxima (límite de seguridad)
+ * @return Color/radiancia acumulada
+ */
+inline Color pathTrace(const Ray& ray, 
+                       const vector<unique_ptr<GeometricShape>>& shapes,
+                       const vector<PointLight>& lights,
+                       mt19937& gen,
+                       uniform_real_distribution<double>& dis,
+                       int depth,
+                       int maxDepth,
+                       int rrMinDepth = 2,
+                       double rrStopProb = 0.05) {
+    
+    // Parámetros de Russian Roulette
+    const int minDepth = rrMinDepth; // Profundidad mínima antes de aplicar RR
+    const double pStop = rrStopProb;  // Probabilidad de terminar
+    
+    // Límite de seguridad (por si acaso, evitar stack overflow)
+    if (depth >= maxDepth) {
+        return Color(0, 0, 0);
+    }
+    
+    // Encontrar intersección más cercana
+    HitInfo hit = findClosestIntersection(ray, shapes, ray.o);
+    
+    // Si no hay intersección, devolver color de fondo (negro)
+    if (!hit.hit) {
+        return Color(0, 0, 0);
+    }
+    
+    // Si el objeto emite luz, devolver la emisión (no rebota)
+    if (hit.emission.r > 0 || hit.emission.g > 0 || hit.emission.b > 0) {
+        return hit.emission;
+    }
+    
+    // Color acumulado (iluminación directa + indirecta)
+    Color L(0, 0, 0);
+    
+    // ============================================
+    // 1. ILUMINACIÓN DIRECTA (Direct Lighting)
+    // ============================================
+    for (const auto& light : lights) {
+        // Comprobar visibilidad con shadow ray
+        if (isVisible(hit.point, light.position, shapes)) {
+            Direction wi = (light.position - hit.point);
+            double distToLight = wi.norm();
+            wi = wi / distToLight; // Normalizar
+            
+            // Atenuación por distancia
+            Color Li = light.intensity / (distToLight * distToLight);
+            
+            // BRDF difusa (por ahora solo difusa para iluminación directa)
+            Color fr = hit.kd * (1.0 / M_PI);
+
+            // Factor geométrico
+            double cosTheta = max(0.0, hit.normal.dot(wi));
+            
+            // Contribución de esta luz
+            L = L + (Li * fr * cosTheta);
+        }
+    }
+    
+    // ============================================
+    // 2. ILUMINACIÓN INDIRECTA (Indirect Lighting)
+    // ============================================
+    
+    // Calcular probabilidades de cada lóbulo de la BSDF
+    double sumKd = hit.kd.r + hit.kd.g + hit.kd.b;
+    double sumKs = hit.ks.r + hit.ks.g + hit.ks.b;
+    double sumKt = hit.kt.r + hit.kt.g + hit.kt.b;
+    double totalSum = sumKd + sumKs + sumKt;
+    
+    // Si no hay reflectancia, terminar (objeto puramente emisor)
+    if (totalSum < 1e-6) {
+        return L;
+    }
+    
+    // ============================================
+    // RUSSIAN ROULETTE - Terminación estocástica
+    // ============================================
+    if (depth >= minDepth) {
+        double rrValue = dis(gen);
+        if (rrValue < pStop) {
+            // Terminar el path aquí
+            return L;
+        }
+        // Si continuamos, compensar dividiendo por la probabilidad de continuar
+        // Esto se aplica al throughput más adelante
+    }
+    
+    // Probabilidades normalizadas
+    double pDiffuse = sumKd / totalSum;
+    double pSpecular = sumKs / totalSum;
+    double pTransmission = sumKt / totalSum;
+    
+    // Seleccionar un lóbulo aleatoriamente (Russian Roulette)
+    double lobeChoice = dis(gen);
+    
+    Direction newRayDir;
+    Color throughput; // Factor de transmisión de luz
+    double pdf; // Probability density function
+    
+    if (lobeChoice < pDiffuse) {
+        // ===== LÓBULO DIFUSO =====
+        // Muestreo con distribución de coseno
+        Direction tangent, bitangent;
+        buildOrthonormalBasis(hit.normal, tangent, bitangent);
+        Direction localDir = cosineSampleHemisphere(gen, dis);
+        newRayDir = localToWorld(localDir, hit.normal, tangent, bitangent);
+        
+        // BRDF difusa: kd / π
+        // PDF del muestreo de coseno: cos(θ) / π
+        // throughput = BRDF * cos(θ) / PDF = kd / π * cos(θ) / (cos(θ) / π) = kd
+        throughput = hit.kd / pDiffuse; // Dividir por probabilidad de selección
+        
+    } else if (lobeChoice < pDiffuse + pSpecular) {
+        // ===== LÓBULO ESPECULAR (Reflexión perfecta) =====
+        Direction wo = ray.d * (-1.0); // Dirección hacia afuera (opuesta al rayo incidente)
+        newRayDir = perfectReflection(wo, hit.normal);
+        
+        // Para reflexión perfecta (BSDF delta), el throughput es simplemente ks
+        throughput = hit.ks / pSpecular;
+        
+    } else {
+        // ===== LÓBULO DE TRANSMISIÓN (Refracción) =====
+        // TODO: Implementar refracción en el futuro
+        // Por ahora, terminar el path
+        return L;
+    }
+    
+    // Compensar por Russian Roulette si aplica
+    if (depth >= minDepth) {
+        double pContinue = 1.0 - pStop;
+        throughput = throughput / pContinue;
+    }
+    
+    // Crear nuevo rayo
+    Ray newRay(hit.point, newRayDir);
+    
+    // Trazar recursivamente
+    Color Li = pathTrace(newRay, shapes, lights, gen, dis, depth + 1, maxDepth, rrMinDepth, rrStopProb);
+    
+    // Acumular iluminación indirecta
+    L = L + (throughput * Li);
+    
+    return L;
+}
+
+#endif // PATH_TRACING_HPP
