@@ -143,6 +143,33 @@ Image loadHDRImage(const string& filename) {
     }
 }
 
+void saveHDRImage(const Image& img, const string& filename) {
+    // Crea un buffer compatible con OpenEXR
+    Array2D<Rgba> pixels;
+    pixels.resizeErase(img.height, img.width);
+
+    // Copia los datos de la matriz a la estructura Rgba
+    for (int i = 0; i < img.height; ++i) {
+        for (int j = 0; j < img.width; ++j) {
+            const PixelRGB& p = img.imagen[i][j];
+            pixels[i][j] = Rgba(
+                static_cast<half>(p.R),
+                static_cast<half>(p.G),
+                static_cast<half>(p.B),
+                static_cast<half>(1.0f) // alpha = 1.0
+            );
+        }
+    }
+
+    try {
+        RgbaOutputFile file(filename.c_str(), img.width, img.height, WRITE_RGBA);
+        file.setFrameBuffer(&pixels[0][0], 1, img.width);
+        file.writePixels(img.height);
+    } catch (const std::exception& e) {
+        throw runtime_error("Cannot create HDR: " + string(e.what()));
+    }
+}
+
 // Function to save LDR image as PNG
 void savePNGImage(const Image& img, const string& filename) {
     FILE *file = fopen(filename.c_str(), "wb");

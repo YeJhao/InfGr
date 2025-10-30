@@ -3,6 +3,8 @@
 
 #include <string>
 
+using namespace std;
+
 class PixelRGB {
     public: 
         double R, G, B;
@@ -36,8 +38,9 @@ class Image {
 };
 
 // Function prototypes
-Image loadHDRImage(const std::string& filename);
-void savePNGImage(const Image& img, const std::string& filename);
+Image loadHDRImage(const string& filename);
+void saveHDRImage(const Image& img, const string& filename);
+void savePNGImage(const Image& img, const string& filename);
 Image clamping(const Image& img);
 Image ecualization(const Image& img);
 Image clamp_ecualization(const Image& img, double threshold);

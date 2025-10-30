@@ -20,135 +20,118 @@
 using namespace std;
 
 // Configuración de Path Tracing
-#define raysPerPixel 4         // Muestras por píxel (anti-aliasing)
+#define raysPerPixel 2         // Muestras por píxel (anti-aliasing)
 #define maxBounces 100          // Límite de seguridad, Russian Roulette terminará antes
 #define RR_MIN_DEPTH 2         // Profundidad mínima antes de aplicar Russian Roulette
 #define RR_STOP_PROB 0.04      // Probabilidad de terminar en la Russian Roulette
 
-/*
- * Pre:  Text
- * Post: Text
- */
-void checkIntersections(vector<unique_ptr<GeometricShape>> shapes, Ray ray, Camera camera) {
-    // Variables para encontrar la intersección más cercana
-    double minDistance = numeric_limits<double>::max();
-    GeometricShape* closestShape = nullptr;  
-    Point closestIntersection = Point(0,0,0);
+int current_scene = 1;
 
-    for (const auto& shape : shapes) {
-        vector<Point> intersections = ray.intersections(*shape);
-        
-        // Para cada intersección, calcular distancia y quedarse con la más cercana
-        for (const Point& intersection : intersections) {
-            Direction toIntersection = intersection - camera.origin;
-            double distance = toIntersection.norm();
-            
-            if (distance < minDistance) {
-                minDistance = distance;
-                closestShape = shape.get();
-                closestIntersection = intersection;
-            }
-        }
-    }
+// Pre: shapes y lights ya creados
+// Post: carga en shapes y lights la escena de Cornell Box con luz puntual
+void cb_point_light(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    Plane planoArriba(Direction(0, -1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoArriba));
+
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.8, 0.6, 0.9), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaIzquierda));
+
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0.5, 0.9, 0.9), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaDerecha));
+
+
+    // LUZ PUNTUAL
+    PointLight light(Point(0, 0.5, 0), Color(1, 1, 1));
+    lights.push_back(make_unique<PointLight>(light));
 }
 
-// Pre: 
-// Post:    Adds a sphere to the shapes vector based on user input
-void createSphere(vector<unique_ptr<GeometricShape>>& shapes) {
-    Point center; 
-    double cx, cy, cz;
-    double radius;
-    double r, g, b;
-    double k_r, k_g, k_b;
+// Pre: shapes y lights ya creados
+// Post: carga en shapes y lights la escena de Cornell Box con luz de área (plano superior emisor)
+void cb_area_light(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+    shapes.clear();
+    lights.clear();
 
-    cout << "Centro de la esfera (x, y, z): ";
-    cin >> cx >> cy >> cz;
-    center = Point(cx, cy, cz);
-    cout << "Radio de la esfera: ";
-    cin >> radius;
-    cout << "Emisión (R, G, B): ";
-    cin >> r >> g >> b;
-    Color rgb(r, g, b);
-    cout << "Coeficiente kd (R, G, B): ";
-    cin >> k_r >> k_g >> k_b;
-    Color kd(k_r, k_g, k_b);
-    cout << "Coeficiente ks (R, G, B): ";
-    cin >> k_r >> k_g >> k_b;
-    Color ks(k_r, k_g, k_b);
-    cout << "Coeficiente kt (R, G, B): ";
-    cin >> k_r >> k_g >> k_b;
-    Color kt(k_r, k_g, k_b);
+    // GEOMETRÍA    
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8,0.8,0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+    
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8,0.8,0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+    
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
 
-    shapes.push_back(make_unique<Sphere>(center, radius, rgb, kd, ks, kt));
-    cout << "Esfera agregada exitosamente." << endl;
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.8, 0.6, 0.9), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaIzquierda));
+    
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0.5, 0.9, 0.9), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaDerecha));
+
+
+    // LUZ DE ÁREA 
+    Plane areaLight(Direction(0, -1, 0), 1, Color(1,1,1), Color(0,0,0), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(areaLight));
 }
 
-// Pre:
-// Post:    Adds a plane to the shapes vector based on user input
-void createPlane(vector<unique_ptr<GeometricShape>>& shapes) {
-    Direction planeNormal;
-    double planeNormalX, planeNormalY, planeNormalZ;
-    double planeDistance;
-    double r, g, b;
-    double k_r, k_g, k_b;
+// Pre: shapes y lights ya creados
+// Post: carga en shapes y lights la escena de Cornell Box con dos luces puntuales
+void cb_two_point_lights(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+    shapes.clear();
+    lights.clear();
 
-    cout << "Normal del plano (dx, dy, dz): ";
-    cin >> planeNormalX >> planeNormalY >> planeNormalZ;
-    planeNormal = Direction(planeNormalX, planeNormalY, planeNormalZ);
-    cout << "Distancia desde el origen al plano: ";
-    cin >> planeDistance;
-    cout << "Emision (R, G, B): ";
-    cin >> r >> g >> b;
-    Color rgb(r, g, b);
-    cout << "Coeficiente kd (R, G, B): ";
-    cin >> k_r >> k_g >> k_b;
-    Color kd(k_r, k_g, k_b);
-    cout << "Coeficiente ks (R, G, B): ";
-    cin >> k_r >> k_g >> k_b;
-    Color ks(k_r, k_g, k_b);
-    cout << "Coeficiente kt (R, G, B): ";
-    cin >> k_r >> k_g >> k_b;
-    Color kt(k_r, k_g, k_b);
+    // GEOMETRÍA
+    Plane planoArriba(Direction(0, -1, 0), 1, Color(0,0,0), Color(0.8,0.8,0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoArriba));
+    
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8,0.8,0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+    
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8,0.8,0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+    
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
 
-    shapes.push_back(make_unique<Plane>(planeNormal.normalized(), planeDistance, rgb, kd, ks, kt));
-    cout << "Plano agregado exitosamente." << endl;
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.8, 0.6, 0.9), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaIzquierda));
+    
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0.5, 0.9, 0.9), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaDerecha));
+    
+
+    // DOS LUCES PUNTUALES
+    PointLight light1(Point(1, 0, 0.5), Color(1, 1, 1));
+    lights.push_back(make_unique<PointLight>(light1));
+
+    PointLight light2(Point(-1, 0, 0.5), Color(1, 1, 1));
+    lights.push_back(make_unique<PointLight>(light2));
 }
 
-// Pre:
-// Post:    Adds a triangle to the shapes vector based on user input
-void createTriangle(vector<unique_ptr<GeometricShape>>& shapes) {
-    double p1x, p1y, p1z, p2x, p2y, p2z, p3x, p3y, p3z;
-    double r, g, b;
-    double k_r, k_g, k_b;
-
-    cout << "Vértices del triángulo (p1 x y z): ";
-    cin >> p1x >> p1y >> p1z;
-    cout << "Vértices del triángulo (p2 x y z): ";
-    cin >> p2x >> p2y >> p2z;
-    cout << "Vértices del triángulo (p3 x y z): ";
-    cin >> p3x >> p3y >> p3z;
-    Point p1(p1x, p1y, p1z);
-    Point p2(p2x, p2y, p2z);
-    Point p3(p3x, p3y, p3z);
-    cout << "Emision (R, G, B): ";
-    cin >> r >> g >> b;
-    Color rgb(r, g, b);
-    cout << "Coeficiente kd (R, G, B): ";
-    cin >> k_r >> k_g >> k_b;
-    Color kd(k_r, k_g, k_b);
-    cout << "Coeficiente ks (R, G, B): ";
-    cin >> k_r >> k_g >> k_b;
-    Color ks(k_r, k_g, k_b);
-    cout << "Coeficiente kt (R, G, B): ";
-    cin >> k_r >> k_g >> k_b;
-    Color kt(k_r, k_g, k_b);
-
-    shapes.push_back(make_unique<Triangle>(p1, p2, p3, rgb, kd, ks, kt));
-    cout << "Triángulo agregado exitosamente." << endl;
-}
 
 int main() {
-    cout << "Tamaño de la imagen (anchura altura):" << endl;
+    cout << "Tamaño de la imagen (anchura altura): ";
     int pixelWidth;
     cin >> pixelWidth;
     int pixelHeight;
@@ -157,52 +140,46 @@ int main() {
     int numPixels = pixelWidth * pixelHeight;
 
     vector<unique_ptr<GeometricShape>> shapes;
+    vector<unique_ptr<PointLight>> lights;
+
+    cb_point_light(shapes, lights);
 
     int opcion;
     do {
-        cout << "\n=== MENÚ PRINCIPAL ===" << endl;
-        cout << "1. Agregar Esfera" << endl;
-        cout << "2. Agregar Plano" << endl;
-        cout << "3. Agregar Triángulo" << endl;
-        cout << "4. Listar Formas Creadas" << endl;
-        cout << "5. Generar imagen" << endl;
+        cout << "\n=== MENÚ PRINCIPAL ===\n" << endl;
+        cout << "Escena actual: " << current_scene << endl << endl;
+        cout << "1. Cornell Box con luz puntual" << endl;
+        cout << "2. Cornell Box con luz de área" << endl;
+        cout << "3. Cornell Box con dos luces puntuales" << endl;
+        cout << "9. Generar imagen" << endl;
         cout << "0. Salir" << endl;
         cout << "Selecciona una opción: ";
         cin >> opcion;
 
         switch(opcion) {
             case 1: {
-                createSphere(shapes);
+                if (current_scene == 1) break;
+                cb_point_light(shapes, lights);
+                current_scene = 1;
                 break;
             }
             
             case 2: {
-                createPlane(shapes);
+                if (current_scene == 2) break;
+                cb_area_light(shapes, lights);
+                current_scene = 2;
                 break;
             }
             
             case 3: {
-                createTriangle(shapes);
-                break;
-            }
-
-            case 4: {
-                cout << "\n=== LISTA DE FORMAS CREADAS ===" << endl;
-                if (shapes.empty()) {
-                    cout << "No hay formas geométricas creadas." << endl;
-                } else {
-                    int contador = 1;
-                    for (const auto& shape : shapes) {
-                        cout << contador << ". ";
-                        shape->print();
-                        contador++;
-                    }
-                }
+                if (current_scene == 3) break;
+                cb_two_point_lights(shapes, lights);
+                current_scene = 3;
                 break;
             }
 
             // Generar imagen con cámara configurable
-            case 5: {
+            case 9: {
                 if (shapes.empty()) {
                     cout << "No hay formas geométricas creadas. Agregue algunas primero." << endl;
                     break;
@@ -211,46 +188,8 @@ int main() {
                 cout << "\n=== CONFIGURACIÓN DE CÁMARA ===" << endl;
                 
                 // Configurar cámara
-                Point cameraOrigin;
-                Direction l, u, f; // vectores base de la cámara
-                double ox, oy, oz;
-                double lx, ly, lz, ux, uy, uz, fx, fy, fz;
-                
-                cout << "Origen de la cámara (x, y, z): ";
-                cin >> ox >> oy >> oz;
-                cameraOrigin = Point(ox, oy, oz);
-                
-                cout << "Vector L (left/izquierda) (x, y, z): ";
-                cin >> lx >> ly >> lz;
-                l = Direction(lx, ly, lz);
-                
-                cout << "Vector U (up/arriba) (x, y, z): ";
-                cin >> ux >> uy >> uz;
-                u = Direction(ux, uy, uz);
-
-                cout << "Vector F (front/adelante) (x, y, z): ";
-                cin >> fx >> fy >> fz;
-                f = Direction(fx, fy, fz);
-
-                // Crear la cámara
-                Camera camera(cameraOrigin, l, u, f);
-
-                cout << "\n=== CONFIGURACIÓN DE LA LUZ ===" << endl;
-                double lightX, lightY, lightZ;
-                double intR, intG, intB;
-                cout << "Posición de la luz (x, y, z): ";
-                cin >> lightX >> lightY >> lightZ;
-                Point lightPosition(lightX, lightY, lightZ);
-                cout << "Intensidad de la luz (R, G, B): ";
-                cin >> intR >> intG >> intB;
-                Color lightIntensity(intR, intG, intB);
-
-                // Crear la fuente de luz (luz puntual)
-                PointLight light(lightPosition, lightIntensity);
-                
-                // Vector de luces para path tracing
-                vector<PointLight> lights;
-                lights.push_back(light);
+                Camera camera(Point(0, 0, -3.5), Direction(-1,0,0), Direction(0,1,0), Direction(0,0,3));
+                cout << "Cámara configurada en origen (0,0,-3.5) con vectores <l=(-1,0,0), u=(0,1,0), f=(0,0,3)>." << endl;
 
                 cout << "\n=== GENERANDO IMAGEN ===" << endl;
                 cout << "Path tracing con " << maxBounces << " rebotes máximos y " 
@@ -296,90 +235,6 @@ int main() {
                             // Crear el rayo desde el origen de la cámara hacia el punto del píxel
                             Ray ray(camera.origin, rayDirection.normalized());
                             
-                            /*
-                            // Variables para encontrar la intersección más cercana
-                            double minDistance = numeric_limits<double>::max();
-                            GeometricShape* closestShape = nullptr;  
-                            Point closestIntersection = Point(0,0,0);                    
-                            
-                            // Comprobar intersección con todas las formas
-                            // TODO: Seguir con el check
-                            //checkIntersections(shapes, ray, camera);
-                            for (const auto& shape : shapes) {
-                                vector<Point> intersections = ray.intersections(*shape);
-                                
-                                // Para cada intersección, calcular distancia y quedarse con la más cercana
-                                for (const Point& intersection : intersections) {
-                                    Direction toIntersection = intersection - camera.origin;
-                                    double distance = toIntersection.norm();
-                                    
-                                    if (distance < minDistance) {
-                                        minDistance = distance;
-                                        closestShape = shape.get();
-                                        closestIntersection = intersection;
-                                    }
-                                }
-                            }
-
-                            Color geometryColor(0, 0, 0); // Negro por defecto
-                            
-                            Direction geometryNormal(0, 0, 0);
-
-                            if (closestShape) {
-                                if (auto sphere = dynamic_cast<const Sphere*>(closestShape)) {
-                                    geometryColor = Color(sphere->emission.r, sphere->emission.g, sphere->emission.b);
-                                    geometryKd = Color(sphere->kd.r, sphere->kd.g, sphere->kd.b);
-                                    geometryKs = Color(sphere->ks.r, sphere->ks.g, sphere->ks.b);
-                                    geometryKt = Color(sphere->kt.r, sphere->kt.g, sphere->kt.b);
-                                    geometryNormal = sphere->calculateNormalAtPoint(closestIntersection);
-                                } else if (auto plane = dynamic_cast<const Plane*>(closestShape)) {
-                                    geometryColor = Color(plane->emission.r, plane->emission.g, plane->emission.b);
-                                    geometryKd = Color(plane->kd.r, plane->kd.g, plane->kd.b);
-                                    geometryKs = Color(plane->ks.r, plane->ks.g, plane->ks.b);
-                                    geometryKt = Color(plane->kt.r, plane->kt.g, plane->kt.b);
-                                    geometryNormal = plane->normal;
-                                } else if (auto triangle = dynamic_cast<const Triangle*>(closestShape)) {
-                                    geometryColor = Color(triangle->emission.r, triangle->emission.g, triangle->emission.b);
-                                    geometryKd = Color(triangle->kd.r, triangle->kd.g, triangle->kd.b);
-                                    geometryKs = Color(triangle->ks.r, triangle->ks.g, triangle->ks.b);
-                                    geometryKt = Color(triangle->kt.r, triangle->kt.g, triangle->kt.b);
-                                    geometryNormal = triangle->normal;
-                                }
-                            }
-
-                            // Calcular la iluminación del rayo usando BSDF completa
-                            if (closestShape) {
-                                // Si el objeto emite luz, usar solo la emisión
-                                if (geometryColor.r > 0 || geometryColor.g > 0 || geometryColor.b > 0) {
-                                    total = total + geometryColor;
-                                } else {
-                                    // Objeto reflectante - calcular iluminación
-                                    Direction wi = (light.position - closestIntersection); // Dirección a la luz
-                                    double distanceToLight = wi.norm();
-                                    wi = wi / distanceToLight; // Normalizar
-                                    
-                                    Direction wo = (camera.origin - closestIntersection).normalized(); // Dirección a la cámara
-                                    
-                                    // Luz incidente atenuada por distancia (ley del inverso del cuadrado)
-                                    Color incomingLight = light.intensity / (distanceToLight * distanceToLight);
-                                    
-                                    // Factor geométrico: cos(θ) entre normal y dirección de la luz
-                                    double cosTheta = std::max(0.0, geometryNormal.dot(wi));
-                                    
-                                    // Inicializar BSDF
-                                    Color fr(0, 0, 0);
-                                    
-                                    // 1. Componente difuso (BRDF Lambertiana)
-                                    fr = fr + geometryKd;
-                                                           
-                                    // Ecuación de rendering: Lo = ∫ Li * fr * cos(θ) dω
-                                    // Versión simplificada para luz puntual única:
-                                    Color Lo = incomingLight * fr;
-                                    
-                                    // Acumular el color de este rayo
-                                    total = total + Lo;
-                                }
-                            }*/
                             // Trazar el rayo con path tracing recursivo
                             Color rayColor = pathTrace(ray, shapes, lights, gen, dis, 0, maxBounces, 
                                                       RR_MIN_DEPTH, RR_STOP_PROB);
@@ -415,14 +270,21 @@ int main() {
                 cout << "\nNombre de la imagen (sin .png): ";
                 string nameInput;
                 cin >> nameInput;
-                string filename = nameInput + ".png";
-                cout << "Guardando imagen como: " << filename << endl;
+                //string filenamePng = nameInput + ".png";
+                string filenameExr = nameInput + ".exr";
                 
-                try {
-                    savePNGImage(image, filename);
+                /*try {
+                    savePNGImage(image, filenamePng);
                     cout << "¡Imagen generada exitosamente!" << endl;
                 } catch (const exception& e) {
                     cout << "Error al guardar la imagen: " << e.what() << endl;
+                }*/
+
+                try {
+                    saveHDRImage(image, filenameExr);
+                    cout << "Imagen HDR guardada exitosamente como: " << filenameExr << endl;
+                } catch (const exception& e) {
+                    cout << "Error al guardar la imagen HDR: " << e.what() << endl;
                 }
                 
                 break;

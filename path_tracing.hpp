@@ -140,7 +140,8 @@ inline void buildOrthonormalBasis(const Direction& n, Direction& tangent, Direct
 /**
  * Transforma una dirección del espacio local (respecto a la normal) al espacio mundial
  */
-inline Direction localToWorld(const Direction& localDir, const Direction& normal, const Direction& tangent, const Direction& bitangent) {
+inline Direction localToWorld(const Direction& localDir, const Direction& normal, 
+                              const Direction& tangent, const Direction& bitangent) {
     return (tangent * localDir.d[0] + 
             bitangent * localDir.d[1] + 
             normal * localDir.d[2]).normalized();
@@ -159,7 +160,7 @@ inline Direction localToWorld(const Direction& localDir, const Direction& normal
  */
 inline Color pathTrace(const Ray& ray, 
                        const vector<unique_ptr<GeometricShape>>& shapes,
-                       const vector<PointLight>& lights,
+                       const vector<unique_ptr<PointLight>>& lights,
                        mt19937& gen,
                        uniform_real_distribution<double>& dis,
                        int depth,
@@ -197,13 +198,13 @@ inline Color pathTrace(const Ray& ray,
     // ============================================
     for (const auto& light : lights) {
         // Comprobar visibilidad con shadow ray
-        if (isVisible(hit.point, light.position, shapes)) {
-            Direction wi = (light.position - hit.point);
+        if (isVisible(hit.point, light->position, shapes)) {
+            Direction wi = (light->position - hit.point);
             double distToLight = wi.norm();
             wi = wi / distToLight; // Normalizar
             
             // Atenuación por distancia
-            Color Li = light.intensity / (distToLight * distToLight);
+            Color Li = light->intensity / (distToLight * distToLight);
             
             // BRDF difusa (por ahora solo difusa para iluminación directa)
             Color fr = hit.kd * (1.0 / M_PI);
