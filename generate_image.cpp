@@ -14,11 +14,13 @@
 #include <memory>
 #include <limits>
 #include <random>
+#include <chrono>
+#include <iomanip>
 
 using namespace std;
 
 // Configuración de Path Tracing
-#define raysPerPixel 64         // Muestras por píxel (anti-aliasing)
+#define raysPerPixel 4         // Muestras por píxel (anti-aliasing)
 #define maxBounces 100          // Límite de seguridad, Russian Roulette terminará antes
 #define RR_MIN_DEPTH 2         // Profundidad mínima antes de aplicar Russian Roulette
 #define RR_STOP_PROB 0.04      // Probabilidad de terminar en la Russian Roulette
@@ -399,11 +401,13 @@ int main() {
                         
                         // Obtener la hora actual
                         auto now = std::chrono::system_clock::now();
-                        auto time_t = std::chrono::system_clock::to_time_t(now);
-                        auto tm = *std::localtime(&time_t);
-                        
-                        cout << "Progreso: " << progress << "% (" << (i + 1) << "/" << pixelHeight << " filas) - " 
-                             << std::put_time(&tm, "%H:%M:%S") << endl;
+
+                        std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+
+                        std::tm local_time = *std::localtime(&now_time);
+
+                        cout << "Progreso: " << progress << "% (" << (i + 1) << "/" << pixelHeight << " filas) - "
+                             << std::put_time(&local_time, "%H:%M:%S") << endl;
                     }
                 }
                 
