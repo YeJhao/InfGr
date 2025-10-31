@@ -20,7 +20,7 @@
 using namespace std;
 
 // Configuración de Path Tracing
-#define raysPerPixel 2         // Muestras por píxel (anti-aliasing)
+#define raysPerPixel 512         // Muestras por píxel (anti-aliasing)
 #define maxBounces 100          // Límite de seguridad, Russian Roulette terminará antes
 #define RR_MIN_DEPTH 2         // Profundidad mínima antes de aplicar Russian Roulette
 #define RR_STOP_PROB 0.04      // Probabilidad de terminar en la Russian Roulette
@@ -184,6 +184,12 @@ int main() {
                     cout << "No hay formas geométricas creadas. Agregue algunas primero." << endl;
                     break;
                 }
+                // Guardar la imagen
+                cout << "\nNombre de la imagen (sin extensión): ";
+                string nameInput;
+                cin >> nameInput;
+                //string filenamePng = nameInput + ".png";
+                string filenameExr = nameInput + ".exr";
                 
                 cout << "\n=== CONFIGURACIÓN DE CÁMARA ===" << endl;
                 
@@ -194,6 +200,11 @@ int main() {
                 cout << "\n=== GENERANDO IMAGEN ===" << endl;
                 cout << "Path tracing con " << maxBounces << " rebotes máximos y " 
                      << raysPerPixel << " rayos por píxel" << endl;
+
+                auto now = std::chrono::system_clock::now();
+                std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+                std::tm local_time = *std::localtime(&now_time);
+                cout << "Inicio: " << std::put_time(&local_time, "%H:%M:%S") << endl;
                 
                 // Crear la imagen
                 Image image(pixelWidth, pixelHeight);
@@ -265,14 +276,13 @@ int main() {
                              << std::put_time(&local_time, "%H:%M:%S") << endl;
                     }
                 }
+
+                auto end = std::chrono::system_clock::now();
+                std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+                std::tm end_local_time = *std::localtime(&end_time);
+                cout << "Fin: " << std::put_time(&end_local_time, "%H:%M:%S") << endl;
                 
-                // Guardar la imagen
-                cout << "\nNombre de la imagen (sin .png): ";
-                string nameInput;
-                cin >> nameInput;
-                //string filenamePng = nameInput + ".png";
-                string filenameExr = nameInput + ".exr";
-                
+                            
                 /*try {
                     savePNGImage(image, filenamePng);
                     cout << "¡Imagen generada exitosamente!" << endl;
