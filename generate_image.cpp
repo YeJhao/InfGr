@@ -20,16 +20,16 @@
 using namespace std;
 
 // Configuración de Path Tracing
-#define raysPerPixel 512         // Muestras por píxel (anti-aliasing)
 #define maxBounces 100          // Límite de seguridad, Russian Roulette terminará antes
 #define RR_MIN_DEPTH 2         // Profundidad mínima antes de aplicar Russian Roulette
 #define RR_STOP_PROB 0.04      // Probabilidad de terminar en la Russian Roulette
 
 int current_scene = 1;
+int raysPerPixel = 512;       // Rayos por píxel (SPP)
 
 // Pre: shapes y lights ya creados
 // Post: carga en shapes y lights la escena de Cornell Box con luz puntual
-void cb_point_light(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+void cb_onePL_difuse_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
     shapes.clear();
     lights.clear();
 
@@ -63,7 +63,7 @@ void cb_point_light(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_pt
 
 // Pre: shapes y lights ya creados
 // Post: carga en shapes y lights la escena de Cornell Box con luz de área (plano superior emisor)
-void cb_area_light(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+void cb_top_AL(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
     shapes.clear();
     lights.clear();
 
@@ -94,7 +94,7 @@ void cb_area_light(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr
 
 // Pre: shapes y lights ya creados
 // Post: carga en shapes y lights la escena de Cornell Box con dos luces puntuales
-void cb_two_point_lights(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+void cb_twoPL_difuse_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
     shapes.clear();
     lights.clear();
 
@@ -129,6 +129,71 @@ void cb_two_point_lights(vector<unique_ptr<GeometricShape>>& shapes, vector<uniq
     lights.push_back(make_unique<PointLight>(light2));
 }
 
+// Pre: shapes y lights ya creados
+// Post: carga en shapes y lights la escena de Cornell Box con luz puntual
+void cb_onePL_specular_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    Plane planoArriba(Direction(0, -1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoArriba));
+
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.8, 0.6, 0.9), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaIzquierda));
+
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.5, 0.9, 0.9), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaDerecha));
+
+
+    // LUZ PUNTUAL
+    PointLight light(Point(0, 0.5, 0), Color(1, 1, 1));
+    lights.push_back(make_unique<PointLight>(light));
+}
+
+// Pre: 
+// Post: 
+void cb_top_AL_specular_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA    
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8,0.8,0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+    
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8,0.8,0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+    
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.8, 0.6, 0.9), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaIzquierda));
+    
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.5, 0.9, 0.9), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaDerecha));
+
+
+    // LUZ DE ÁREA 
+    Plane areaLight(Direction(0, -1, 0), 1, Color(1,1,1), Color(0,0,0), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(areaLight));
+}
+
 
 int main() {
     cout << "Tamaño de la imagen (anchura altura): ";
@@ -149,8 +214,11 @@ int main() {
         cout << "\n=== MENÚ PRINCIPAL ===\n" << endl;
         cout << "Escena actual: " << current_scene << endl << endl;
         cout << "1. Cornell Box con luz puntual" << endl;
-        cout << "2. Cornell Box con luz de área" << endl;
+        cout << "2. Cornell Box con luz de área" << endl << endl;
+        cout << "----EXTRAS----" << endl;
         cout << "3. Cornell Box con dos luces puntuales" << endl;
+        cout << "4. Cornell Box con luz puntual y esferas especulares" << endl;
+        cout << "5. Cornell Box con luz de área y esferas especulares" << endl << endl;
         cout << "9. Generar imagen" << endl;
         cout << "0. Salir" << endl;
         cout << "Selecciona una opción: ";
@@ -159,22 +227,36 @@ int main() {
         switch(opcion) {
             case 1: {
                 if (current_scene == 1) break;
-                cb_point_light(shapes, lights);
+                cb_onePL_difuse_spheres(shapes, lights);
                 current_scene = 1;
                 break;
             }
             
             case 2: {
                 if (current_scene == 2) break;
-                cb_area_light(shapes, lights);
+                cb_top_AL(shapes, lights);
                 current_scene = 2;
                 break;
             }
             
             case 3: {
                 if (current_scene == 3) break;
-                cb_two_point_lights(shapes, lights);
+                cb_twoPL_difuse_spheres(shapes, lights);
                 current_scene = 3;
+                break;
+            }
+
+            case 4: {
+                if (current_scene == 4) break;
+                cb_onePL_specular_spheres(shapes, lights);
+                current_scene = 4;
+                break;
+            }
+
+            case 5: {
+                if (current_scene == 5) break;
+                cb_top_AL_specular_spheres(shapes, lights);
+                current_scene = 5;
                 break;
             }
 
@@ -184,11 +266,27 @@ int main() {
                     cout << "No hay formas geométricas creadas. Agregue algunas primero." << endl;
                     break;
                 }
+                // Configuración spp
+                cout << "SPP (actual " << raysPerPixel << " spp, presiona Enter para mantener): ";
+                string sppInput;
+                getline(cin, sppInput);
+                getline(cin, sppInput); // Segunda llamada para capturar la línea real
+                
+                if (!sppInput.empty()) {
+                    try {
+                        int newSpp = stoi(sppInput);
+                        if (newSpp > 0) {
+                            raysPerPixel = newSpp;
+                        }
+                    } catch (const exception&) {
+                        cout << "Entrada inválida, manteniendo SPP actual." << endl;
+                    }
+                }
+                
                 // Guardar la imagen
                 cout << "\nNombre de la imagen (sin extensión): ";
                 string nameInput;
                 cin >> nameInput;
-                //string filenamePng = nameInput + ".png";
                 string filenameExr = nameInput + ".exr";
                 
                 cout << "\n=== CONFIGURACIÓN DE CÁMARA ===" << endl;
@@ -282,14 +380,6 @@ int main() {
                 std::tm end_local_time = *std::localtime(&end_time);
                 cout << "Fin: " << std::put_time(&end_local_time, "%H:%M:%S") << endl;
                 
-                            
-                /*try {
-                    savePNGImage(image, filenamePng);
-                    cout << "¡Imagen generada exitosamente!" << endl;
-                } catch (const exception& e) {
-                    cout << "Error al guardar la imagen: " << e.what() << endl;
-                }*/
-
                 try {
                     saveHDRImage(image, filenameExr);
                     cout << "Imagen HDR guardada exitosamente como: " << filenameExr << endl;
