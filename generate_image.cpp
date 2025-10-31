@@ -194,6 +194,40 @@ void cb_top_AL_specular_spheres(vector<unique_ptr<GeometricShape>>& shapes, vect
     shapes.push_back(make_unique<Plane>(areaLight));
 }
 
+// Pre:
+// Post:
+void cb_onePL_plastic_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    Plane planoArriba(Direction(0, -1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoArriba));
+
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.8, 0.6, 0.9), Color(0.2, 0.4, 0.1), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaIzquierda));
+
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0.5, 0.9, 0.9), Color(0.5, 0.1, 0.1), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaDerecha));
+
+
+    // LUZ PUNTUAL
+    PointLight light(Point(0, 0.5, 0), Color(1, 1, 1));
+    lights.push_back(make_unique<PointLight>(light));
+}
+
 
 int main() {
     cout << "Tamaño de la imagen (anchura altura): ";
@@ -218,8 +252,9 @@ int main() {
         cout << "----EXTRAS----" << endl;
         cout << "3. Cornell Box con dos luces puntuales" << endl;
         cout << "4. Cornell Box con luz puntual y esferas especulares" << endl;
-        cout << "5. Cornell Box con luz de área y esferas especulares" << endl << endl;
-        cout << "9. Generar imagen" << endl;
+        cout << "5. Cornell Box con luz de área y esferas especulares" << endl;
+        cout << "6. Cornell Box luz puntual y esferas plásticas" << endl;
+        cout << "\n9. Generar imagen" << endl;
         cout << "0. Salir" << endl;
         cout << "Selecciona una opción: ";
         cin >> opcion;
@@ -257,6 +292,13 @@ int main() {
                 if (current_scene == 5) break;
                 cb_top_AL_specular_spheres(shapes, lights);
                 current_scene = 5;
+                break;
+            }
+
+            case 6: {
+                if (current_scene == 6) break;
+                cb_onePL_plastic_spheres(shapes, lights);
+                current_scene = 6;
                 break;
             }
 
@@ -392,9 +434,8 @@ int main() {
             
             default: {
                 cout << "chao" << endl;
+                return 0;
             }
         }
-    } while (opcion > 0 && opcion < 6);
-
-    return 1;
+    } while (true);
 }
