@@ -207,11 +207,11 @@ int main() {
     vector<unique_ptr<GeometricShape>> shapes;
     vector<unique_ptr<PointLight>> lights;
 
-    cb_point_light(shapes, lights);
+    cb_onePL_difuse_spheres(shapes, lights);
 
     int opcion;
     do {
-        cout << "\n=== MENÚ PRINCIPAL ===\n" << endl;
+        cout << "\n=== MENÚ PRINCIPAL ===" << endl;
         cout << "Escena actual: " << current_scene << endl << endl;
         cout << "1. Cornell Box con luz puntual" << endl;
         cout << "2. Cornell Box con luz de área" << endl << endl;
