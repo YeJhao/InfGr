@@ -6,9 +6,9 @@
 using namespace std;
 
 Plane::Plane(const Direction& normal_, double distance_, const Color& emission_, 
-             const Color& kd_, const Color& ks_, const Color& kt_)
+             const Color& kd_, const Color& ks_, const Color& kt_, double ior_)
     : normal(normal_.normalized()), distance(distance_), emission(emission_), 
-      kd(kd_), ks(ks_), kt(kt_)
+      kd(kd_), ks(ks_), kt(kt_), ior(ior_)
 {
     // Asegura que los valores sean positivos
     if (emission.r < 0 || emission.g < 0 || emission.b < 0) {
@@ -26,6 +26,10 @@ Plane::Plane(const Direction& normal_, double distance_, const Color& emission_,
         kd.g + ks.g + kt.g > 1.0 || 
         kd.b + ks.b + kt.b > 1.0) {
         throw invalid_argument("La suma de coeficientes (kd + ks + kt) debe ser <= 1 en cada canal RGB");
+    }
+
+    if (ior < 0.0) {
+        throw invalid_argument("El índice de refracción debe ser positivo.");
     }
 }
 

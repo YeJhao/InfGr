@@ -7,8 +7,8 @@
 using namespace std;
 
 Sphere::Sphere(const Point& center_, double radius_, const Color& emission_, 
-               const Color& kd_, const Color& ks_, const Color& kt_)
-    : center(center_), radius(radius_), emission(emission_), kd(kd_), ks(ks_), kt(kt_)
+               const Color& kd_, const Color& ks_, const Color& kt_, double ior_)
+    : center(center_), radius(radius_), emission(emission_), kd(kd_), ks(ks_), kt(kt_), ior(ior_)
 {
     // Asegura que los valores sean positivos
     if (emission.r < 0 || emission.g < 0 || emission.b < 0) {
@@ -30,6 +30,10 @@ Sphere::Sphere(const Point& center_, double radius_, const Color& emission_,
     
     if (radius <= 0) {
         throw invalid_argument("El radio de la esfera debe ser positivo.");
+    }
+
+    if (ior < 0.0) {
+        throw invalid_argument("El índice de refracción debe ser positivo.");
     }
 }
 

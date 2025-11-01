@@ -114,6 +114,7 @@ void cb_twoPL_difuse_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<
     Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
     shapes.push_back(make_unique<Plane>(planoDerecha));
 
+    // Esferas difusas
     Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.8, 0.6, 0.9), Color(0,0,0), Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaIzquierda));
     
@@ -151,6 +152,7 @@ void cb_onePL_specular_spheres(vector<unique_ptr<GeometricShape>>& shapes, vecto
     Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
     shapes.push_back(make_unique<Plane>(planoDerecha));
 
+    // Esferas especulares
     Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.8, 0.6, 0.9), Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaIzquierda));
 
@@ -182,6 +184,7 @@ void cb_top_AL_specular_spheres(vector<unique_ptr<GeometricShape>>& shapes, vect
     Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
     shapes.push_back(make_unique<Plane>(planoDerecha));
 
+    // Esferas especulares
     Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.8, 0.6, 0.9), Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaIzquierda));
     
@@ -216,12 +219,87 @@ void cb_onePL_plastic_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector
     Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
     shapes.push_back(make_unique<Plane>(planoDerecha));
 
-    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.8, 0.6, 0.9), Color(0.2, 0.4, 0.1), Color(0,0,0));
+    // Esferas "plásticas"
+    //Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.6, 0.4, 0.6), Color(0.2, 0.2, 0.3), Color(0,0,0));
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.704, 0.528, 0.792), Color(0.12, 0.12, 0.12), Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaIzquierda));
 
-    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0.5, 0.9, 0.9), Color(0.5, 0.1, 0.1), Color(0,0,0));
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0.3, 0.5, 0.5), Color(0.2, 0.4, 0.4), Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaDerecha));
 
+
+    // LUZ PUNTUAL
+    PointLight light(Point(0, 0.5, 0), Color(1, 1, 1));
+    lights.push_back(make_unique<PointLight>(light));
+}
+
+// Pre:
+// Post:
+void cb_especular_sides(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights){
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    Plane planoArriba(Direction(0, -1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoArriba));
+
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0,0,0), Color(1, 1, 1), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0,0,0), Color(1, 1, 1), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    // Esferas difusas
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.8, 0.6, 0.9), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaIzquierda));
+
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0.5, 0.9, 0.9), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaDerecha));
+
+
+    // LUZ PUNTUAL
+    PointLight light(Point(0, 0.5, 0), Color(1, 1, 1));
+    lights.push_back(make_unique<PointLight>(light));
+}
+
+// Pre:
+// Post:
+void cb_dielectric_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    Plane planoArriba(Direction(0, -1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoArriba));
+
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    Sphere esferaIzquierda2(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), 
+                           Color(0.04, 0.04, 0.04), Color(0.96, 0.96, 0.96), 1.33);
+    shapes.push_back(make_unique<Sphere>(esferaIzquierda2));
+
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.15, Color(0, 0, 0), Color(0,1,1), Color(), Color(), 1.33);
+    shapes.push_back(make_unique<Sphere>(esferaIzquierda));
+
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.02, 0.02, 0.02), 
+                         Color(0.98, 0.98, 0.98), 1.5);
+    shapes.push_back(make_unique<Sphere>(esferaDerecha));
 
     // LUZ PUNTUAL
     PointLight light(Point(0, 0.5, 0), Color(1, 1, 1));
@@ -247,14 +325,16 @@ int main() {
     do {
         cout << "\n=== MENÚ PRINCIPAL ===" << endl;
         cout << "Escena actual: " << current_scene << endl << endl;
-        cout << "1. Cornell Box con luz puntual" << endl;
-        cout << "2. Cornell Box con luz de área" << endl << endl;
+        cout << "1. Luz puntual" << endl;
+        cout << "2. Luz de área" << endl << endl;
         cout << "----EXTRAS----" << endl;
-        cout << "3. Cornell Box con dos luces puntuales" << endl;
-        cout << "4. Cornell Box con luz puntual y esferas especulares" << endl;
-        cout << "5. Cornell Box con luz de área y esferas especulares" << endl;
-        cout << "6. Cornell Box luz puntual y esferas plásticas" << endl;
-        cout << "\n9. Generar imagen" << endl;
+        cout << "3. Dos luces puntuales" << endl;
+        cout << "4. Esferas especulares" << endl;
+        cout << "5. Luz de área y esferas especulares" << endl;
+        cout << "6. Esferas plásticas" << endl;
+        cout << "7. Paredes especulares" << endl;
+        cout << "8. Esferas dieléctricas" << endl;
+        cout << "\n22. Generar imagen" << endl;
         cout << "0. Salir" << endl;
         cout << "Selecciona una opción: ";
         cin >> opcion;
@@ -302,8 +382,22 @@ int main() {
                 break;
             }
 
+            case 7: {
+                if (current_scene == 7) break;
+                cb_especular_sides(shapes, lights);
+                current_scene = 7;
+                break;
+            }
+
+            case 8: {
+                if (current_scene == 8) break;
+                cb_dielectric_spheres(shapes, lights);
+                current_scene = 8;
+                break;
+            }
+
             // Generar imagen con cámara configurable
-            case 9: {
+            case 22: {
                 if (shapes.empty()) {
                     cout << "No hay formas geométricas creadas. Agregue algunas primero." << endl;
                     break;

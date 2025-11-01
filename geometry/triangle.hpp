@@ -11,9 +11,10 @@ class Triangle : public GeometricShape {
         Direction normal; // Normal vector (computed from vertices)
         Color emission;  // Emission color of the triangle
         Color kd, ks, kt; // Coefficients for the triangle
+        double ior = 1.0; // Índice de refracción
 
         Triangle(const Point& vertex0, const Point& vertex1, const Point& vertex2, const Color& emission_, 
-                 const Color& kd_, const Color& ks_, const Color& kt_);
+                 const Color& kd_, const Color& ks_, const Color& kt_, double ior_ = 1.0);
 
         // Override the pure virtual method
         std::vector<Point> intersections(const Ray& ray) const override;

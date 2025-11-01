@@ -6,8 +6,8 @@
 using namespace std;
 
 Triangle::Triangle(const Point& vertex0, const Point& vertex1, const Point& vertex2, const Color& emission_, 
-                   const Color& kd_, const Color& ks_, const Color& kt_)
-    : v0(vertex0), v1(vertex1), v2(vertex2), emission(emission_), kd(kd_), ks(ks_), kt(kt_)
+                   const Color& kd_, const Color& ks_, const Color& kt_, double ior_)
+    : v0(vertex0), v1(vertex1), v2(vertex2), emission(emission_), kd(kd_), ks(ks_), kt(kt_), ior(ior_)
 {
     // Asegura que los valores sean positivos
     if (emission.r < 0 || emission.g < 0 || emission.b < 0) {
@@ -25,6 +25,10 @@ Triangle::Triangle(const Point& vertex0, const Point& vertex1, const Point& vert
         kd.g + ks.g + kt.g > 1.0 || 
         kd.b + ks.b + kt.b > 1.0) {
         throw invalid_argument("La suma de coeficientes (kd + ks + kt) debe ser <= 1 en cada canal RGB");
+    }
+
+    if (ior < 0.0) {
+        throw invalid_argument("El índice de refracción debe ser positivo.");
     }
     
     computeNormal();

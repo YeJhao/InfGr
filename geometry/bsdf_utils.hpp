@@ -17,40 +17,41 @@ inline Direction perfectReflection(const Direction& wo, const Direction& n) {
 
 /**
  * Calcula la dirección de refracción perfecta usando la ley de Snell
- * @param wo Dirección de salida (hacia la cámara, normalizada)
- * @param n Normal de la superficie (normalizada)
- * @param eta Índice de refracción relativo (n1/n2)
- * @param refracted Dirección de refracción resultante (si hay refracción)
- * @return true si hay refracción, false si hay reflexión total interna
+ * @param wo Dirección de salida (hacia el observador, normalizada)
+ * @param n Normal de la superficie (normalizada, apunta hacia el medio "from")
+ * @param iorFrom Índice de refracción del medio de origen
+ * @param iorTo Índice de refracción del medio de destino
+ * @return Dirección refractada (normalizada), o Direction(0,0,0) si hay reflexión interna total
+ * 
+ * Ley de Snell: η₁·sin(θ₁) = η₂·sin(θ₂)
+ * Fórmula vectorial: wt = -η·wo + (η·cos(θ₁) - cos(θ₂))·n
  */
-inline bool perfectRefraction(const Direction& wo, const Direction& n, double eta, Direction& refracted) {
-    double cos_theta_i = n.dot(wo);
-    double sin2_theta_i = 1.0 - cos_theta_i * cos_theta_i;
-    double sin2_theta_t = (eta * eta) * sin2_theta_i;
+inline Direction perfectRefraction(const Direction& wo, const Direction& n, double iorFrom, double iorTo) {
+    double eta = iorFrom / iorTo;  // η = η₁/η₂
     
-    // Reflexión total interna
-    if (sin2_theta_t >= 1.0) {
-        return false;
+    // cos(θ₁) = n · wo (ángulo entre dirección incidente y normal)
+    double cosTheta_i = n.dot(wo);
+    
+    // Calcular sin²(θ₁) = 1 - cos²(θ₁)
+    double sin2Theta_i = 1.0 - cosTheta_i * cosTheta_i;
+    
+    // Calcular sin²(θ₂) usando ley de Snell: sin²(θ₂) = η²·sin²(θ₁)
+    double sin2Theta_t = eta * eta * sin2Theta_i;
+    
+    // Comprobar reflexión interna total: si sin²(θ₂) > 1, no hay refracción
+    if (sin2Theta_t > 1.0) {
+        // Reflexión interna total - devolver vector nulo como señal
+        return Direction(0, 0, 0);
     }
     
-    double cos_theta_t = std::sqrt(1.0 - sin2_theta_t);
+    // Calcular cos(θ₂) = √(1 - sin²(θ₂))
+    double cosTheta_t = sqrt(1.0 - sin2Theta_t);
     
-    // ωt = -η·ωo + (η·cos(θi) - cos(θt))·n
-    refracted = (wo * (-eta) + n * (eta * cos_theta_i - cos_theta_t)).normalized();
+    // Fórmula vectorial de refracción:
+    // wt = -η·wo + (η·cos(θ₁) - cos(θ₂))·n
+    Direction wt = (wo * (-eta)) + (n * (eta * cosTheta_i - cosTheta_t));
     
-    return true;
-}
-
-/**
- * Calcula el coeficiente de Fresnel para materiales dieléctricos (aproximación de Schlick)
- * @param cos_theta Coseno del ángulo entre wo y la normal
- * @param eta Índice de refracción relativo (n1/n2)
- * @return Coeficiente de reflexión de Fresnel [0, 1]
- */
-inline double fresnelSchlick(double cos_theta, double eta) {
-    double r0 = (1.0 - eta) / (1.0 + eta);
-    r0 = r0 * r0;
-    return r0 + (1.0 - r0) * std::pow(1.0 - cos_theta, 5.0);
+    return wt.normalized();
 }
 
 #endif // BSDF_UTILS_HPP

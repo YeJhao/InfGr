@@ -26,6 +26,7 @@ struct HitInfo {
     Color kd;
     Color ks;
     Color kt;
+    double ior;
     GeometricShape* shape;
     
     // Constructor básico, por defecto
@@ -58,18 +59,21 @@ inline HitInfo findClosestIntersection(const Ray& ray, const vector<unique_ptr<G
                     hitInfo.kd = sphere->kd;
                     hitInfo.ks = sphere->ks;
                     hitInfo.kt = sphere->kt;
+                    hitInfo.ior = sphere->ior;
                     hitInfo.normal = sphere->calculateNormalAtPoint(intersection);
                 } else if (auto plane = dynamic_cast<const Plane*>(shape.get())) {
                     hitInfo.emission = plane->emission;
                     hitInfo.kd = plane->kd;
                     hitInfo.ks = plane->ks;
                     hitInfo.kt = plane->kt;
+                    hitInfo.ior = plane->ior;
                     hitInfo.normal = plane->normal;
                 } else if (auto triangle = dynamic_cast<const Triangle*>(shape.get())) {
                     hitInfo.emission = triangle->emission;
                     hitInfo.kd = triangle->kd;
                     hitInfo.ks = triangle->ks;
                     hitInfo.kt = triangle->kt;
+                    hitInfo.ior = triangle->ior;
                     hitInfo.normal = triangle->normal;
                 }
             }
@@ -280,9 +284,47 @@ inline Color pathTrace(const Ray& ray,
         
     } else {
         // ===== LÓBULO DE TRANSMISIÓN (Refracción) =====
-        // TODO: Implementar refracción en el futuro
-        // Por ahora, terminar el path
-        return L;
+        Direction wo = ray.d * (-1.0); // Dirección hacia afuera
+        
+        // Determinar si estamos entrando o saliendo del objeto
+        // Si n·wo > 0, el rayo viene del exterior (entrando)
+        // Si n·wo < 0, el rayo viene del interior (saliendo)
+        double cosTheta = hit.normal.dot(wo);
+        
+        // IORs por defecto (estos valores deberían venir de las geometrías en el futuro)
+        double iorFrom, iorTo;
+        Direction effectiveNormal;
+        
+        if (cosTheta > 0) {
+            // Entrando al objeto: aire → material
+            iorFrom = 1.0;  // IOR del aire
+            iorTo = hit.ior;    // IOR del material (vidrio por defecto, debería venir del objeto)
+            effectiveNormal = hit.normal;
+        } else {
+            // Saliendo del objeto: material → aire
+            iorFrom = hit.ior;  // IOR del material
+            iorTo = 1.0;    // IOR del aire
+            effectiveNormal = hit.normal * (-1.0); // Invertir la normal
+            cosTheta = -cosTheta; // Corregir el coseno
+        }
+        
+        // Calcular dirección refractada
+        Direction wt = perfectRefraction(wo, effectiveNormal, iorFrom, iorTo);
+        
+        // Comprobar si hubo reflexión interna total
+        if (wt.d[0] == 0 && wt.d[1] == 0 && wt.d[2] == 0) {
+            // Reflexión interna total - usar reflexión en lugar de refracción
+            newRayDir = perfectReflection(wo, effectiveNormal);
+            throughput = hit.kt / pTransmission; // Usar kt como si fuera reflexión especular
+        } else {
+            // Refracción exitosa
+            newRayDir = wt;
+            
+            // Para BTDF delta (refracción perfecta), throughput = kt
+            // Nota: En física real también necesitaríamos el término de Fresnel,
+            // pero por simplicidad usamos kt directamente
+            throughput = hit.kt / pTransmission;
+        }
     }
     
     // Compensar por Russian Roulette si aplica
