@@ -20,15 +20,13 @@
 using namespace std;
 
 // Configuración de Path Tracing
-#define maxBounces 100          // Límite de seguridad, Russian Roulette terminará antes
+#define maxBounces 100         // Límite de seguridad, Russian Roulette terminará antes
 #define RR_MIN_DEPTH 2         // Profundidad mínima antes de aplicar Russian Roulette
-#define RR_STOP_PROB 0.04      // Probabilidad de terminar en la Russian Roulette
 
 int current_scene = 1;
-int raysPerPixel = 512;       // Rayos por píxel (SPP)
+int raysPerPixel = 512;        // Rayos por píxel (SPP)
 
-// Pre: shapes y lights ya creados
-// Post: carga en shapes y lights la escena de Cornell Box con luz puntual
+// Cornell Box básica con luz puntual arriba y esferas difusas
 void cb_onePL_difuse_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
     shapes.clear();
     lights.clear();
@@ -61,8 +59,7 @@ void cb_onePL_difuse_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<
     lights.push_back(make_unique<PointLight>(light));
 }
 
-// Pre: shapes y lights ya creados
-// Post: carga en shapes y lights la escena de Cornell Box con luz de área (plano superior emisor)
+// Cornell Box con luz de área (plano superior) y esferas difusas
 void cb_top_AL(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
     shapes.clear();
     lights.clear();
@@ -92,8 +89,7 @@ void cb_top_AL(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<Poi
     shapes.push_back(make_unique<Plane>(areaLight));
 }
 
-// Pre: shapes y lights ya creados
-// Post: carga en shapes y lights la escena de Cornell Box con dos luces puntuales
+// Cornell Box con dos luces puntuales y esferas difusas
 void cb_twoPL_difuse_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
     shapes.clear();
     lights.clear();
@@ -130,8 +126,7 @@ void cb_twoPL_difuse_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<
     lights.push_back(make_unique<PointLight>(light2));
 }
 
-// Pre: shapes y lights ya creados
-// Post: carga en shapes y lights la escena de Cornell Box con luz puntual
+// Cornell Box con luz puntual y esferas especulares
 void cb_onePL_specular_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
     shapes.clear();
     lights.clear();
@@ -153,10 +148,22 @@ void cb_onePL_specular_spheres(vector<unique_ptr<GeometricShape>>& shapes, vecto
     shapes.push_back(make_unique<Plane>(planoDerecha));
 
     // Esferas especulares
-    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.8, 0.6, 0.9), Color(0,0,0));
+    cout << "Esfera izquierda con color? (S/N): ";
+    char respuesta;
+    cin >> respuesta;
+    Color kd(0,0,0);
+    if (respuesta == 'S' || respuesta == 's') {
+        kd = Color(0.8, 0.6, 0.9);
+    } else kd = Color(0.9, 0.9, 0.9);
+    cout << "kd izquierda: " << kd.r << ", " << kd.g << ", " << kd.b << endl;
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), kd, Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaIzquierda));
 
-    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.5, 0.9, 0.9), Color(0,0,0));
+    cout << "Esfera derecha con color? (S/N): ";
+    cin >> respuesta;
+    if (respuesta == 'S' || respuesta == 's') kd = Color(0.5, 0.9, 0.9); else kd = Color(0.9, 0.9, 0.9);
+    cout << "kd derecha: " << kd.r << ", " << kd.g << ", " << kd.b << endl;
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), kd, Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaDerecha));
 
 
@@ -165,8 +172,7 @@ void cb_onePL_specular_spheres(vector<unique_ptr<GeometricShape>>& shapes, vecto
     lights.push_back(make_unique<PointLight>(light));
 }
 
-// Pre: 
-// Post: 
+// Cornell Box con luz de área (plano superior) y esferas especulares
 void cb_top_AL_specular_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
     shapes.clear();
     lights.clear();
@@ -185,10 +191,18 @@ void cb_top_AL_specular_spheres(vector<unique_ptr<GeometricShape>>& shapes, vect
     shapes.push_back(make_unique<Plane>(planoDerecha));
 
     // Esferas especulares
-    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.8, 0.6, 0.9), Color(0,0,0));
+    cout << "Esfera izquierda con color? (S/N): ";
+    char respuesta;
+    cin >> respuesta;
+    Color kd(0,0,0);
+    if (respuesta == 'S' || respuesta == 's') kd = (0.8, 0.6, 0.9); else kd = (1,1,1);
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), kd, Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaIzquierda));
     
-    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.5, 0.9, 0.9), Color(0,0,0));
+    cout << "Esfera derecha con color? (S/N): ";
+    cin >> respuesta;
+    if (respuesta == 'S' || respuesta == 's') kd = (0.5, 0.9, 0.9); else kd = (1,1,1);
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), kd, Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaDerecha));
 
 
@@ -197,8 +211,7 @@ void cb_top_AL_specular_spheres(vector<unique_ptr<GeometricShape>>& shapes, vect
     shapes.push_back(make_unique<Plane>(areaLight));
 }
 
-// Pre:
-// Post:
+// Cornell Box con luz puntual y esferas plásticas
 void cb_onePL_plastic_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
     shapes.clear();
     lights.clear();
@@ -220,11 +233,10 @@ void cb_onePL_plastic_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector
     shapes.push_back(make_unique<Plane>(planoDerecha));
 
     // Esferas "plásticas"
-    //Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.6, 0.4, 0.6), Color(0.2, 0.2, 0.3), Color(0,0,0));
-    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.704, 0.528, 0.792), Color(0.12, 0.12, 0.12), Color(0,0,0));
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.7, 0.5, 0.8), Color(0.1, 0.1, 0.1), Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaIzquierda));
 
-    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0.3, 0.5, 0.5), Color(0.2, 0.4, 0.4), Color(0,0,0));
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0.4, 0.8, 0.8), Color(0.1, 0.1, 0.1), Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaDerecha));
 
 
@@ -233,8 +245,7 @@ void cb_onePL_plastic_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector
     lights.push_back(make_unique<PointLight>(light));
 }
 
-// Pre:
-// Post:
+// Cornell Box con luz puntual y paredes laterales especulares
 void cb_especular_sides(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights){
     shapes.clear();
     lights.clear();
@@ -268,8 +279,7 @@ void cb_especular_sides(vector<unique_ptr<GeometricShape>>& shapes, vector<uniqu
     lights.push_back(make_unique<PointLight>(light));
 }
 
-// Pre:
-// Post:
+// Cornell Box con luz puntual y 2 esferas dieléctricas, en la de la izquierda se encuentra dentro una difusa azul
 void cb_dielectric_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
     shapes.clear();
     lights.clear();
@@ -290,16 +300,18 @@ void cb_dielectric_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<un
     Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
     shapes.push_back(make_unique<Plane>(planoDerecha));
 
+    // Esferas dieléctricas
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.15, Color(0, 0, 0), Color(0,1,1), Color(), Color(), 1.33);
+    shapes.push_back(make_unique<Sphere>(esferaIzquierda));
+
     Sphere esferaIzquierda2(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), 
                            Color(0.04, 0.04, 0.04), Color(0.96, 0.96, 0.96), 1.33);
     shapes.push_back(make_unique<Sphere>(esferaIzquierda2));
 
-    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.15, Color(0, 0, 0), Color(0,1,1), Color(), Color(), 1.33);
-    shapes.push_back(make_unique<Sphere>(esferaIzquierda));
-
     Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.02, 0.02, 0.02), 
                          Color(0.98, 0.98, 0.98), 1.5);
     shapes.push_back(make_unique<Sphere>(esferaDerecha));
+
 
     // LUZ PUNTUAL
     PointLight light(Point(0, 0.5, 0), Color(1, 1, 1));
@@ -362,14 +374,12 @@ int main() {
             }
 
             case 4: {
-                if (current_scene == 4) break;
                 cb_onePL_specular_spheres(shapes, lights);
                 current_scene = 4;
                 break;
             }
 
             case 5: {
-                if (current_scene == 5) break;
                 cb_top_AL_specular_spheres(shapes, lights);
                 current_scene = 5;
                 break;
@@ -482,7 +492,7 @@ int main() {
                             
                             // Trazar el rayo con path tracing recursivo
                             Color rayColor = pathTrace(ray, shapes, lights, gen, dis, 0, maxBounces, 
-                                                      RR_MIN_DEPTH, RR_STOP_PROB);
+                                                      RR_MIN_DEPTH);
                             
                             // Acumular el color de este rayo
                             total = total + rayColor;

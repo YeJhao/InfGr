@@ -169,12 +169,10 @@ inline Color pathTrace(const Ray& ray,
                        uniform_real_distribution<double>& dis,
                        int depth,
                        int maxDepth,
-                       int rrMinDepth = 2,
-                       double rrStopProb = 0.05) {
+                       int rrMinDepth = 2) {
     
     // Parámetros de Russian Roulette
     const int minDepth = rrMinDepth; // Profundidad mínima antes de aplicar RR
-    const double pStop = rrStopProb;  // Probabilidad de terminar
     
     // Límite de seguridad (por si acaso, evitar stack overflow)
     if (depth >= maxDepth) {
@@ -186,6 +184,7 @@ inline Color pathTrace(const Ray& ray,
     
     // Si no hay intersección, devolver color de fondo (negro)
     if (!hit.hit) {
+        cout << "No hay intersección" << endl;
         return Color(0, 0, 0);
     }
     
@@ -226,42 +225,41 @@ inline Color pathTrace(const Ray& ray,
     // ============================================
     
     // Calcular probabilidades de cada lóbulo de la BSDF
-    double sumKd = hit.kd.r + hit.kd.g + hit.kd.b;
-    double sumKs = hit.ks.r + hit.ks.g + hit.ks.b;
-    double sumKt = hit.kt.r + hit.kt.g + hit.kt.b;
-    double totalSum = sumKd + sumKs + sumKt;
+    //double sumKd = hit.kd.r + hit.kd.g + hit.kd.b;
+    //double sumKs = hit.ks.r + hit.ks.g + hit.ks.b;
+    //double sumKt = hit.kt.r + hit.kt.g + hit.kt.b;
+    //double totalSum = sumKd + sumKs + sumKt;
+    double maxKd = max(hit.kd.r, max(hit.kd.g, hit.kd.b)); 
+    double maxKs = max(hit.ks.r, max(hit.ks.g, hit.ks.b));
+    double maxKt = max(hit.kt.r, max(hit.kt.g, hit.kt.b));
+    double s = max(1.0, (maxKd + maxKs + maxKt + 0.1));
+    // Probabilidades de cada lóbulo normalizadas
+    double pdiff = (maxKd / s);
+    double pspec = (maxKs / s);
+    double ptrans = (maxKt / s);
+    double pkill = 1.0 - pdiff - pspec - ptrans;
     
-    // Si no hay reflectancia, terminar (objeto puramente emisor)
-    if (totalSum < 1e-6) {
+    // ============================================
+    // RUSSIAN ROULETTE - Terminación
+    // ============================================
+
+    if (depth == 5) {
         return L;
     }
-    
-    // ============================================
-    // RUSSIAN ROULETTE - Terminación estocástica
-    // ============================================
-    if (depth >= minDepth) {
-        double rrValue = dis(gen);
-        if (rrValue < pStop) {
-            // Terminar el path aquí
-            return L;
-        }
-        // Si continuamos, compensar dividiendo por la probabilidad de continuar
-        // Esto se aplica al throughput más adelante
+
+    double rrValue = dis(gen);
+    if (depth >= minDepth && rrValue < pkill) {
+        // Terminar el path aquí
+        return L;
     }
-    
-    // Probabilidades normalizadas
-    double pDiffuse = sumKd / totalSum;
-    double pSpecular = sumKs / totalSum;
-    double pTransmission = sumKt / totalSum;
-    
-    // Seleccionar un lóbulo aleatoriamente (Russian Roulette)
-    double lobeChoice = dis(gen);
-    
+
+    double pDiffuse = pdiff + pkill;
+    double pSpecular = pDiffuse + pspec;
+        
     Direction newRayDir;
     Color throughput; // Factor de transmisión de luz
-    double pdf; // Probability density function
     
-    if (lobeChoice < pDiffuse) {
+    if (rrValue < pDiffuse) {
         // ===== LÓBULO DIFUSO =====
         // Muestreo con distribución de coseno
         Direction tangent, bitangent;
@@ -272,15 +270,15 @@ inline Color pathTrace(const Ray& ray,
         // BRDF difusa: kd / π
         // PDF del muestreo de coseno: cos(θ) / π
         // throughput = BRDF * cos(θ) / PDF = kd / π * cos(θ) / (cos(θ) / π) = kd
-        throughput = hit.kd / pDiffuse; // Dividir por probabilidad de selección
+        throughput = hit.kd / pdiff; // Dividir por probabilidad de selección
         
-    } else if (lobeChoice < pDiffuse + pSpecular) {
+    } else if (rrValue < pSpecular) {
         // ===== LÓBULO ESPECULAR (Reflexión perfecta) =====
         Direction wo = ray.d * (-1.0); // Dirección hacia afuera (opuesta al rayo incidente)
         newRayDir = perfectReflection(wo, hit.normal);
         
         // Para reflexión perfecta (BSDF delta), el throughput es simplemente ks
-        throughput = hit.ks / pSpecular;
+        throughput = hit.ks / pspec;
         
     } else {
         // ===== LÓBULO DE TRANSMISIÓN (Refracción) =====
@@ -298,7 +296,7 @@ inline Color pathTrace(const Ray& ray,
         if (cosTheta > 0) {
             // Entrando al objeto: aire → material
             iorFrom = 1.0;  // IOR del aire
-            iorTo = hit.ior;    // IOR del material (vidrio por defecto, debería venir del objeto)
+            iorTo = hit.ior;    // IOR del material
             effectiveNormal = hit.normal;
         } else {
             // Saliendo del objeto: material → aire
@@ -315,7 +313,7 @@ inline Color pathTrace(const Ray& ray,
         if (wt.d[0] == 0 && wt.d[1] == 0 && wt.d[2] == 0) {
             // Reflexión interna total - usar reflexión en lugar de refracción
             newRayDir = perfectReflection(wo, effectiveNormal);
-            throughput = hit.kt / pTransmission; // Usar kt como si fuera reflexión especular
+            throughput = hit.kt / ptrans; // Usar kt como si fuera reflexión especular
         } else {
             // Refracción exitosa
             newRayDir = wt;
@@ -323,21 +321,15 @@ inline Color pathTrace(const Ray& ray,
             // Para BTDF delta (refracción perfecta), throughput = kt
             // Nota: En física real también necesitaríamos el término de Fresnel,
             // pero por simplicidad usamos kt directamente
-            throughput = hit.kt / pTransmission;
+            throughput = hit.kt / ptrans;
         }
-    }
-    
-    // Compensar por Russian Roulette si aplica
-    if (depth >= minDepth) {
-        double pContinue = 1.0 - pStop;
-        throughput = throughput / pContinue;
     }
     
     // Crear nuevo rayo
     Ray newRay(hit.point, newRayDir);
     
     // Trazar recursivamente
-    Color Li = pathTrace(newRay, shapes, lights, gen, dis, depth + 1, maxDepth, rrMinDepth, rrStopProb);
+    Color Li = pathTrace(newRay, shapes, lights, gen, dis, depth + 1, maxDepth, rrMinDepth);
     
     // Acumular iluminación indirecta
     L = L + (throughput * Li);
