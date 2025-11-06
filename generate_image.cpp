@@ -148,21 +148,18 @@ void cb_onePL_specular_spheres(vector<unique_ptr<GeometricShape>>& shapes, vecto
     shapes.push_back(make_unique<Plane>(planoDerecha));
 
     // Esferas especulares
-    cout << "Esfera izquierda con color? (S/N): ";
-    char respuesta;
-    cin >> respuesta;
     Color kd(0,0,0);
-    if (respuesta == 'S' || respuesta == 's') {
-        kd = Color(0.8, 0.6, 0.9);
-    } else kd = Color(0.9, 0.9, 0.9);
-    cout << "kd izquierda: " << kd.r << ", " << kd.g << ", " << kd.b << endl;
+    char respuesta;
+
+    cout << "Esfera izquierda con color? (S/N): ";
+    cin >> respuesta;
+    if (respuesta == 'S' || respuesta == 's') kd = Color(0.8, 0.6, 0.9); else kd = Color(1, 1, 1);
     Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), kd, Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaIzquierda));
 
     cout << "Esfera derecha con color? (S/N): ";
     cin >> respuesta;
-    if (respuesta == 'S' || respuesta == 's') kd = Color(0.5, 0.9, 0.9); else kd = Color(0.9, 0.9, 0.9);
-    cout << "kd derecha: " << kd.r << ", " << kd.g << ", " << kd.b << endl;
+    if (respuesta == 'S' || respuesta == 's') kd = Color(0.5, 0.9, 0.9); else kd = Color(1, 1, 1);
     Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), kd, Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaDerecha));
 
@@ -233,10 +230,10 @@ void cb_onePL_plastic_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector
     shapes.push_back(make_unique<Plane>(planoDerecha));
 
     // Esferas "plásticas"
-    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.7, 0.5, 0.8), Color(0.1, 0.1, 0.1), Color(0,0,0));
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.65, 0.45, 0.75), Color(0.15, 0.15, 0.15), Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaIzquierda));
 
-    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0.4, 0.8, 0.8), Color(0.1, 0.1, 0.1), Color(0,0,0));
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0.35, 0.75, 0.75), Color(0.15, 0.15, 0.15), Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaDerecha));
 
 

@@ -174,7 +174,7 @@ inline Color pathTrace(const Ray& ray,
     // Parámetros de Russian Roulette
     const int minDepth = rrMinDepth; // Profundidad mínima antes de aplicar RR
     
-    // Límite de seguridad (por si acaso, evitar stack overflow)
+    // Límite de seguridad (por si acaso)
     if (depth >= maxDepth) {
         return Color(0, 0, 0);
     }
@@ -184,7 +184,6 @@ inline Color pathTrace(const Ray& ray,
     
     // Si no hay intersección, devolver color de fondo (negro)
     if (!hit.hit) {
-        cout << "No hay intersección" << endl;
         return Color(0, 0, 0);
     }
     
@@ -225,40 +224,44 @@ inline Color pathTrace(const Ray& ray,
     // ============================================
     
     // Calcular probabilidades de cada lóbulo de la BSDF
-    //double sumKd = hit.kd.r + hit.kd.g + hit.kd.b;
-    //double sumKs = hit.ks.r + hit.ks.g + hit.ks.b;
-    //double sumKt = hit.kt.r + hit.kt.g + hit.kt.b;
-    //double totalSum = sumKd + sumKs + sumKt;
     double maxKd = max(hit.kd.r, max(hit.kd.g, hit.kd.b)); 
     double maxKs = max(hit.ks.r, max(hit.ks.g, hit.ks.b));
     double maxKt = max(hit.kt.r, max(hit.kt.g, hit.kt.b));
     double s = max(1.0, (maxKd + maxKs + maxKt + 0.1));
-    // Probabilidades de cada lóbulo normalizadas
+    
+    // Probabilidades iniciales (incluyendo pkill)
     double pdiff = (maxKd / s);
     double pspec = (maxKs / s);
     double ptrans = (maxKt / s);
     double pkill = 1.0 - pdiff - pspec - ptrans;
-    
+
     // ============================================
     // RUSSIAN ROULETTE - Terminación
     // ============================================
-
-    if (depth == 5) {
-        return L;
-    }
-
     double rrValue = dis(gen);
-    if (depth >= minDepth && rrValue < pkill) {
-        // Terminar el path aquí
-        return L;
+    if (depth >= minDepth) {
+        if (rrValue < pkill){
+            return L; // Terminar el path aquí
+        }
     }
 
-    double pDiffuse = pdiff + pkill;
+    // Si NO se termina, renormalizar las probabilidades de los lóbulos
+    // (eliminando pkill de las probabilidades)
+    double pContinue = 1.0 - pkill;
+    pdiff = pdiff / pContinue;
+    pspec = pspec / pContinue;
+    ptrans = ptrans / pContinue;
+    
+    // Generar nuevo valor aleatorio para seleccionar el lóbulo
+    rrValue = dis(gen);
+
+    // Probabilidades acumuladas para selección de lóbulo
+    double pDiffuse = pdiff;
     double pSpecular = pDiffuse + pspec;
         
     Direction newRayDir;
     Color throughput; // Factor de transmisión de luz
-    
+
     if (rrValue < pDiffuse) {
         // ===== LÓBULO DIFUSO =====
         // Muestreo con distribución de coseno
@@ -271,7 +274,7 @@ inline Color pathTrace(const Ray& ray,
         // PDF del muestreo de coseno: cos(θ) / π
         // throughput = BRDF * cos(θ) / PDF = kd / π * cos(θ) / (cos(θ) / π) = kd
         throughput = hit.kd / pdiff; // Dividir por probabilidad de selección
-        
+
     } else if (rrValue < pSpecular) {
         // ===== LÓBULO ESPECULAR (Reflexión perfecta) =====
         Direction wo = ray.d * (-1.0); // Dirección hacia afuera (opuesta al rayo incidente)
@@ -294,12 +297,12 @@ inline Color pathTrace(const Ray& ray,
         Direction effectiveNormal;
         
         if (cosTheta > 0) {
-            // Entrando al objeto: aire → material
+            // Entrando al objeto: aire -> material
             iorFrom = 1.0;  // IOR del aire
             iorTo = hit.ior;    // IOR del material
             effectiveNormal = hit.normal;
         } else {
-            // Saliendo del objeto: material → aire
+            // Saliendo del objeto: material -> aire
             iorFrom = hit.ior;  // IOR del material
             iorTo = 1.0;    // IOR del aire
             effectiveNormal = hit.normal * (-1.0); // Invertir la normal
@@ -313,14 +316,13 @@ inline Color pathTrace(const Ray& ray,
         if (wt.d[0] == 0 && wt.d[1] == 0 && wt.d[2] == 0) {
             // Reflexión interna total - usar reflexión en lugar de refracción
             newRayDir = perfectReflection(wo, effectiveNormal);
-            throughput = hit.kt / ptrans; // Usar kt como si fuera reflexión especular
+            // Lo mismo que en los otros lóbulos, dividimos por la probabilidad de selección
+            throughput = hit.kt / ptrans;
         } else {
             // Refracción exitosa
             newRayDir = wt;
             
-            // Para BTDF delta (refracción perfecta), throughput = kt
-            // Nota: En física real también necesitaríamos el término de Fresnel,
-            // pero por simplicidad usamos kt directamente
+            // Para refracción perfecta (BTDF delta), el throughput es simplemente kt
             throughput = hit.kt / ptrans;
         }
     }
