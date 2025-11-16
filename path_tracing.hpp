@@ -208,7 +208,7 @@ inline Color pathTrace(const Ray& ray,
             // Atenuación por distancia
             Color Li = light->intensity / (distToLight * distToLight);
             
-            // BRDF difusa (por ahora solo difusa para iluminación directa)
+            // BRDF difusa (solo difusa para iluminación directa)
             Color fr = hit.kd * (1.0 / M_PI);
 
             // Factor geométrico

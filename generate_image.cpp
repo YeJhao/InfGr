@@ -315,6 +315,42 @@ void cb_dielectric_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<un
     lights.push_back(make_unique<PointLight>(light));
 }
 
+// Cornell box con luz puntual y esfera izquierda plastica y derecha dieléctrica
+void cb_plastic_dielectric(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights){
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    Plane planoArriba(Direction(0, -1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoArriba));
+
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    // Esferas dieléctricas
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.15, Color(0, 0, 0), Color(0.784, 0.588, 0.882), 
+                           Color(0.016, 0.012, 0.018), Color());
+    shapes.push_back(make_unique<Sphere>(esferaIzquierda));
+
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.02, 0.02, 0.02), 
+                         Color(0.98, 0.98, 0.98), 1.5);
+    shapes.push_back(make_unique<Sphere>(esferaDerecha));
+
+
+    // LUZ PUNTUAL
+    PointLight light(Point(0, 0.5, 0), Color(1, 1, 1));
+    lights.push_back(make_unique<PointLight>(light));
+}
+
 
 int main() {
     cout << "Tamaño de la imagen (anchura altura): ";
@@ -343,6 +379,7 @@ int main() {
         cout << "6. Esferas plásticas" << endl;
         cout << "7. Paredes especulares" << endl;
         cout << "8. Esferas dieléctricas" << endl;
+        cout << "9. Esferas plástica y dieléctrica" << endl;
         cout << "\n22. Generar imagen" << endl;
         cout << "0. Salir" << endl;
         cout << "Selecciona una opción: ";
@@ -403,6 +440,13 @@ int main() {
                 break;
             }
 
+            case 9: {
+                if (current_scene == 9) break;
+                cb_plastic_dielectric(shapes, lights);
+                current_scene = 9;
+                break;
+            }
+
             // Generar imagen con cámara configurable
             case 22: {
                 if (shapes.empty()) {
@@ -442,6 +486,8 @@ int main() {
                 cout << "Path tracing con " << maxBounces << " rebotes máximos y " 
                      << raysPerPixel << " rayos por píxel" << endl;
 
+                // Inicio del tiempo de generación
+                auto start_time = std::chrono::high_resolution_clock::now();
                 auto now = std::chrono::system_clock::now();
                 std::time_t now_time = std::chrono::system_clock::to_time_t(now);
                 std::tm local_time = *std::localtime(&now_time);
@@ -518,11 +564,19 @@ int main() {
                     }
                 }
 
+                auto end_time = std::chrono::high_resolution_clock::now();
                 auto end = std::chrono::system_clock::now();
-                std::time_t end_time = std::chrono::system_clock::to_time_t(end);
-                std::tm end_local_time = *std::localtime(&end_time);
+                std::time_t end_time_t = std::chrono::system_clock::to_time_t(end);
+                std::tm end_local_time = *std::localtime(&end_time_t);
                 cout << "Fin: " << std::put_time(&end_local_time, "%H:%M:%S") << endl;
                 
+                // Calcular duración en segundos con precisión de 4 decimales
+                std::chrono::duration<double> duration = end_time - start_time;
+                double elapsed_seconds = duration.count();
+                
+                cout << fixed << setprecision(4);
+                cout << "\nTiempo de generación: " << elapsed_seconds << " segundos" << endl;
+
                 try {
                     saveHDRImage(image, filenameExr);
                     cout << "Imagen HDR guardada exitosamente como: " << filenameExr << endl;
