@@ -337,11 +337,10 @@ void cb_plastic_dielectric(vector<unique_ptr<GeometricShape>>& shapes, vector<un
     shapes.push_back(make_unique<Plane>(planoDerecha));
 
     // Esferas dieléctricas
-    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.65, 0.45, 0.75), Color(0.15, 0.15, 0.15), Color(0,0,0));
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0,0,0), Color(0.65, 0.45, 0.75), Color(0.15, 0.15, 0.15), Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaIzquierda));
 
-    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.02, 0.02, 0.02), 
-                         Color(0.98, 0.98, 0.98), 1.5);
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0,0,0), Color(0,0,0), Color(0.02, 0.02, 0.02), Color(0.98, 0.98, 0.98), 1.5);
     shapes.push_back(make_unique<Sphere>(esferaDerecha));
 
 
