@@ -349,6 +349,37 @@ void cb_plastic_dielectric(vector<unique_ptr<GeometricShape>>& shapes, vector<un
     lights.push_back(make_unique<PointLight>(light));
 }
 
+// Cornell box para color bleeding
+void color_bleeding_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    //Plane planoArriba(Direction(0, -1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    Plane planoArriba(Direction(0, -1, 0), 1, Color(1,1,1), Color(0,0,0), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoArriba));
+
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    // Esfera difusa blanca en el centro
+    Sphere esferaCentro(Point(0, -0.7, 0), 0.3, Color(0,0,0), Color(0.9, 0.9, 0.9), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaCentro));
+
+    // LUZ PUNTUAL
+    //PointLight light(Point(0, 0.5, 0), Color(1, 1, 1));
+    //lights.push_back(make_unique<PointLight>(light));
+}
+
 
 int main() {
     cout << "Tamaño de la imagen (anchura altura): ";
@@ -368,16 +399,20 @@ int main() {
     do {
         cout << "\n=== MENÚ PRINCIPAL ===" << endl;
         cout << "Escena actual: " << current_scene << endl << endl;
-        cout << "1. Luz puntual" << endl;
-        cout << "2. Luz de área" << endl << endl;
+        cout << "1.  Luz puntual" << endl;
+        cout << "2.  Luz de área" << endl << endl;
         cout << "----EXTRAS----" << endl;
-        cout << "3. Dos luces puntuales" << endl;
-        cout << "4. Esferas especulares" << endl;
-        cout << "5. Luz de área y esferas especulares" << endl;
-        cout << "6. Esferas plásticas" << endl;
-        cout << "7. Paredes especulares" << endl;
-        cout << "8. Esferas dieléctricas" << endl;
-        cout << "9. Esferas plástica y dieléctrica" << endl;
+        cout << "3.  Dos luces puntuales" << endl;
+        cout << "4.  Esferas especulares" << endl;
+        cout << "5.  Luz de área y esferas especulares" << endl;
+        cout << "6.  Esferas plásticas" << endl;
+        cout << "7.  Paredes especulares" << endl;
+        cout << "8.  Esferas dieléctricas" << endl;
+        cout << "9.  Esferas plástica y dieléctrica" << endl;
+        cout << "10. Color Bleeding" << endl;
+        cout << "11. Sombras duras" << endl;
+        cout << "12. Sombras suaves" << endl;
+        cout << "13. Caústicas" << endl;
         cout << "\n22. Generar imagen" << endl;
         cout << "0. Salir" << endl;
         cout << "Selecciona una opción: ";
@@ -442,6 +477,13 @@ int main() {
                 if (current_scene == 9) break;
                 cb_plastic_dielectric(shapes, lights);
                 current_scene = 9;
+                break;
+            }
+
+            case 10: {
+                if (current_scene == 10) break;
+                color_bleeding_scene(shapes, lights);
+                current_scene = 10;
                 break;
             }
 
