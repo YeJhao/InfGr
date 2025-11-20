@@ -1,3 +1,11 @@
+/*
+* geometry.hpp
+* Autores: Jiahao Ye (875490) & Raúl Soler Fernández (875478)
+*
+* Este fichero contiene la definición de las clases Point, Direction y Camera,
+* que representan puntos, direcciones y cámaras en el espacio 3D.
+*/
+
 #ifndef GEOMETRY_HPP
 #define GEOMETRY_HPP
 
@@ -10,7 +18,7 @@ using Eigen::Vector3d;
 using Eigen::Vector4d;
 using Eigen::Matrix4d;
 
-// Forward declarations
+// Declaración adelantada
 class Direction;
 
 class Point {
@@ -54,7 +62,6 @@ class Direction {
         double z() const;
 };
 
-// Camera class for flexible viewpoint positioning
 class Camera {
     public:
         Point origin;      // Posición de la cámara
@@ -64,21 +71,12 @@ class Camera {
 
         Camera(const Point& origin_, const Direction& l_, const Direction& u_, const Direction& f_);
         
-        // Convert direction from camera coordinates to world coordinates
         Direction cameraToWorld(const Direction& cameraDir) const;
-        
-        // Convert direction from world coordinates to camera coordinates  
         Direction worldToCamera(const Direction& worldDir) const;
-        
-        // Convert point from camera coordinates to world coordinates
         Point cameraToWorld(const Point& cameraPoint) const;
-        
-        // Convert point from world coordinates to camera coordinates
         Point worldToCamera(const Point& worldPoint) const;
 };
 
-// Global operators
-Direction operator*(double scalar, const Direction& dir);
 std::ostream& operator<<(std::ostream& os, const Point& point);
 std::ostream& operator<<(std::ostream& os, const Direction& dir);
 

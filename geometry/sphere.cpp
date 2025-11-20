@@ -1,5 +1,13 @@
+/*
+* sphere.cpp
+* Autores: Jiahao Ye (875490) & Raúl Soler Fernández (875478)
+*
+* Este fichero contiene la implementación de la clase Sphere,
+* que representa una esfera en el espacio 3D y sus intersecciones con rayos.
+*/
+
 #include "sphere.hpp"
-#include "../ray.hpp"
+#include "../ray/ray.hpp"
 #include <stdexcept>
 #include <cmath>
 #include <iostream>
@@ -37,6 +45,15 @@ Sphere::Sphere(const Point& center_, double radius_, const Color& emission_,
     }
 }
 
+/**
+* Calcula la normal en un punto dado de la superficie de la esfera.
+* @param p Punto en la superficie de la esfera.
+* @return Dirección normal en el punto p.
+*/
+Direction Sphere::calculateNormalAtPoint(const Point& p) const {
+    return (p - center).normalized();
+}
+
 std::vector<Point> Sphere::intersections(const Ray& ray) const {
     vector<Point> intersectionPoints;
     Direction oc = ray.o - center;
@@ -46,20 +63,20 @@ std::vector<Point> Sphere::intersections(const Ray& ray) const {
     double discriminant = b * b - 4 * a * c;
 
     if (discriminant < 0) {
-        return intersectionPoints; // No intersection, empty vector
+        return intersectionPoints; // Si no hay intersección, devolver vector vacío
     } else {
         double t1 = (-b - sqrt(discriminant)) / (2.0 * a);
         double t2 = (-b + sqrt(discriminant)) / (2.0 * a);
         
-        // Only add intersections with positive t (in front of ray origin)
-        if (t1 > 1e-6) {  // Use small epsilon to avoid self-intersection
+        // Solo añadir intersecciones con t positivo (delante del origen del rayo)
+        if (t1 > 1e-6) {  // Usar un pequeño epsilon para evitar auto-intersección
             intersectionPoints.push_back(ray.o + ray.d * t1);
         }
-        if (t2 > 1e-6 && abs(t2 - t1) > 1e-6) {  // Avoid duplicate points
+        if (t2 > 1e-6 && abs(t2 - t1) > 1e-6) {  // Evitar puntos duplicados
             intersectionPoints.push_back(ray.o + ray.d * t2);
         }
         
-        // Sort intersections by distance from ray origin (closest first)
+        // Ordenar intersecciones por distancia desde el origen del rayo (la más cercana primero)
         if (intersectionPoints.size() == 2) {
             double dist1 = (intersectionPoints[0] - ray.o).norm();
             double dist2 = (intersectionPoints[1] - ray.o).norm();
@@ -74,8 +91,4 @@ std::vector<Point> Sphere::intersections(const Ray& ray) const {
 
 void Sphere::print() const {
     cout << "Sphere:\n  center=" << center << ", radius=" << radius << endl;
-}
-
-Direction Sphere::calculateNormalAtPoint(const Point& p) const {
-    return (p - center).normalized();
 }

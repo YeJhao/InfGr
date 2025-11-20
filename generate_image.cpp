@@ -1,13 +1,21 @@
-#include "ray.hpp"
+/**
+* generate_image.cpp
+* Autores: Jiahao Ye (875490) & Raúl Soler Fernández (875478)
+* 
+* Este fichero contiene la configuración de distintas escenas de Cornell Box
+* además de la función principal (main) para generar imágenes
+*/
+
+#include "ray/ray.hpp"
 #include "geometry/geometric_shape.hpp"
 #include "geometry/sphere.hpp"
 #include "geometry/plane.hpp"
 #include "geometry/triangle.hpp"
 #include "geometry/bsdf_utils.hpp"
+#include "geometry/color.hpp"
 #include "path_tracing.hpp"
 #include "imaging/imaging.hpp"
 #include "light/point_light.hpp"
-#include "geometry/color.hpp"
 #include <iostream>
 #include <vector>
 #include <map>
@@ -19,12 +27,9 @@
 
 using namespace std;
 
-// Configuración de Path Tracing
-#define maxBounces 100         // Límite de seguridad, Russian Roulette terminará antes
-#define RR_MIN_DEPTH 2         // Profundidad mínima antes de aplicar Russian Roulette
-
-int current_scene = 1;
-int raysPerPixel = 512;        // Rayos por píxel (SPP)
+// Variables globales
+int current_scene = 1;          //
+int raysPerPixel = 512;         // Rayos por píxel (SPP)
 
 // Cornell Box básica con luz puntual arriba y esferas difusas
 void cb_onePL_difuse_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
@@ -85,7 +90,7 @@ void cb_top_AL(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<Poi
 
 
     // LUZ DE ÁREA 
-    Plane areaLight(Direction(0, -1, 0), 1, Color(1,1,1), Color(0,0,0), Color(0,0,0), Color(0,0,0));
+    Plane areaLight(Direction(0, -1, 0), 1, Color(0.9, 0.9, 0.9), Color(0,0,0), Color(0,0,0), Color(0,0,0));
     shapes.push_back(make_unique<Plane>(areaLight));
 }
 
@@ -523,8 +528,7 @@ int main() {
                 cout << "Cámara configurada en origen (0,0,-3.5) con vectores <l=(-1,0,0), u=(0,1,0), f=(0,0,3)>." << endl;
 
                 cout << "\n=== GENERANDO IMAGEN ===" << endl;
-                cout << "Path tracing con " << maxBounces << " rebotes máximos y " 
-                     << raysPerPixel << " rayos por píxel" << endl;
+                cout << "Path tracing con " << raysPerPixel << " rayos por píxel" << endl;
 
                 // Inicio del tiempo de generación
                 auto start_time = std::chrono::high_resolution_clock::now();
@@ -574,8 +578,7 @@ int main() {
                             Ray ray(camera.origin, rayDirection.normalized());
                             
                             // Trazar el rayo con path tracing recursivo
-                            Color rayColor = pathTrace(ray, shapes, lights, gen, dis, 0, maxBounces, 
-                                                      RR_MIN_DEPTH);
+                            Color rayColor = pathTrace(ray, shapes, lights, gen, dis, 0);
                             
                             // Acumular el color de este rayo
                             total = total + rayColor;
@@ -622,6 +625,16 @@ int main() {
                     cout << "Imagen HDR guardada exitosamente como: " << filenameExr << endl;
                 } catch (const exception& e) {
                     cout << "Error al guardar la imagen HDR: " << e.what() << endl;
+                }
+                
+                string filenamePng;
+                try {
+                    //Image equalized = ecualization(image);
+                    Image ldr_image = gamma_curve(image, 2.2);
+                    filenamePng = nameInput + ".png";
+                    savePNGImage(ldr_image, filenamePng);
+                } catch (const exception& e) {
+                    cout << "Error al guardar la imagen LDR: " << e.what() << endl;
                 }
                 
                 break;

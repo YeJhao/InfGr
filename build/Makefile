@@ -117,43 +117,17 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named geometry
+# Target rules for targets named geometry_lib
 
 # Build rule for target.
-geometry: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 geometry
-.PHONY : geometry
+geometry_lib: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 geometry_lib
+.PHONY : geometry_lib
 
 # fast build rule for target.
-geometry/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry.dir/build.make CMakeFiles/geometry.dir/build
-.PHONY : geometry/fast
-
-#=============================================================================
-# Target rules for targets named imaging
-
-# Build rule for target.
-imaging: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 imaging
-.PHONY : imaging
-
-# fast build rule for target.
-imaging/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/imaging.dir/build.make CMakeFiles/imaging.dir/build
-.PHONY : imaging/fast
-
-#=============================================================================
-# Target rules for targets named ray
-
-# Build rule for target.
-ray: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ray
-.PHONY : ray
-
-# fast build rule for target.
-ray/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/build
-.PHONY : ray/fast
+geometry_lib/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry_lib.dir/build.make CMakeFiles/geometry_lib.dir/build
+.PHONY : geometry_lib/fast
 
 #=============================================================================
 # Target rules for targets named imaging_lib
@@ -167,6 +141,32 @@ imaging_lib: cmake_check_build_system
 imaging_lib/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/imaging_lib.dir/build.make CMakeFiles/imaging_lib.dir/build
 .PHONY : imaging_lib/fast
+
+#=============================================================================
+# Target rules for targets named light_lib
+
+# Build rule for target.
+light_lib: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 light_lib
+.PHONY : light_lib
+
+# fast build rule for target.
+light_lib/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/light_lib.dir/build.make CMakeFiles/light_lib.dir/build
+.PHONY : light_lib/fast
+
+#=============================================================================
+# Target rules for targets named ray_lib
+
+# Build rule for target.
+ray_lib: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ray_lib
+.PHONY : ray_lib
+
+# fast build rule for target.
+ray_lib/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray_lib.dir/build.make CMakeFiles/ray_lib.dir/build
+.PHONY : ray_lib/fast
 
 #=============================================================================
 # Target rules for targets named generate_image
@@ -210,8 +210,7 @@ geometry/color.o: geometry/color.cpp.o
 
 # target to build an object file
 geometry/color.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/color.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/geometry/color.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry_lib.dir/build.make CMakeFiles/geometry_lib.dir/geometry/color.cpp.o
 .PHONY : geometry/color.cpp.o
 
 geometry/color.i: geometry/color.cpp.i
@@ -219,8 +218,7 @@ geometry/color.i: geometry/color.cpp.i
 
 # target to preprocess a source file
 geometry/color.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/color.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/geometry/color.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry_lib.dir/build.make CMakeFiles/geometry_lib.dir/geometry/color.cpp.i
 .PHONY : geometry/color.cpp.i
 
 geometry/color.s: geometry/color.cpp.s
@@ -228,8 +226,7 @@ geometry/color.s: geometry/color.cpp.s
 
 # target to generate assembly for a file
 geometry/color.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/color.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/geometry/color.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry_lib.dir/build.make CMakeFiles/geometry_lib.dir/geometry/color.cpp.s
 .PHONY : geometry/color.cpp.s
 
 geometry/geometry.o: geometry/geometry.cpp.o
@@ -237,9 +234,7 @@ geometry/geometry.o: geometry/geometry.cpp.o
 
 # target to build an object file
 geometry/geometry.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry.dir/build.make CMakeFiles/geometry.dir/geometry/geometry.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/geometry.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/geometry/geometry.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry_lib.dir/build.make CMakeFiles/geometry_lib.dir/geometry/geometry.cpp.o
 .PHONY : geometry/geometry.cpp.o
 
 geometry/geometry.i: geometry/geometry.cpp.i
@@ -247,9 +242,7 @@ geometry/geometry.i: geometry/geometry.cpp.i
 
 # target to preprocess a source file
 geometry/geometry.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry.dir/build.make CMakeFiles/geometry.dir/geometry/geometry.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/geometry.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/geometry/geometry.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry_lib.dir/build.make CMakeFiles/geometry_lib.dir/geometry/geometry.cpp.i
 .PHONY : geometry/geometry.cpp.i
 
 geometry/geometry.s: geometry/geometry.cpp.s
@@ -257,9 +250,7 @@ geometry/geometry.s: geometry/geometry.cpp.s
 
 # target to generate assembly for a file
 geometry/geometry.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry.dir/build.make CMakeFiles/geometry.dir/geometry/geometry.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/geometry.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/geometry/geometry.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry_lib.dir/build.make CMakeFiles/geometry_lib.dir/geometry/geometry.cpp.s
 .PHONY : geometry/geometry.cpp.s
 
 geometry/plane.o: geometry/plane.cpp.o
@@ -267,8 +258,7 @@ geometry/plane.o: geometry/plane.cpp.o
 
 # target to build an object file
 geometry/plane.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/plane.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/geometry/plane.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry_lib.dir/build.make CMakeFiles/geometry_lib.dir/geometry/plane.cpp.o
 .PHONY : geometry/plane.cpp.o
 
 geometry/plane.i: geometry/plane.cpp.i
@@ -276,8 +266,7 @@ geometry/plane.i: geometry/plane.cpp.i
 
 # target to preprocess a source file
 geometry/plane.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/plane.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/geometry/plane.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry_lib.dir/build.make CMakeFiles/geometry_lib.dir/geometry/plane.cpp.i
 .PHONY : geometry/plane.cpp.i
 
 geometry/plane.s: geometry/plane.cpp.s
@@ -285,8 +274,7 @@ geometry/plane.s: geometry/plane.cpp.s
 
 # target to generate assembly for a file
 geometry/plane.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/plane.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/geometry/plane.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry_lib.dir/build.make CMakeFiles/geometry_lib.dir/geometry/plane.cpp.s
 .PHONY : geometry/plane.cpp.s
 
 geometry/sphere.o: geometry/sphere.cpp.o
@@ -294,8 +282,7 @@ geometry/sphere.o: geometry/sphere.cpp.o
 
 # target to build an object file
 geometry/sphere.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/sphere.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/geometry/sphere.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry_lib.dir/build.make CMakeFiles/geometry_lib.dir/geometry/sphere.cpp.o
 .PHONY : geometry/sphere.cpp.o
 
 geometry/sphere.i: geometry/sphere.cpp.i
@@ -303,8 +290,7 @@ geometry/sphere.i: geometry/sphere.cpp.i
 
 # target to preprocess a source file
 geometry/sphere.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/sphere.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/geometry/sphere.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry_lib.dir/build.make CMakeFiles/geometry_lib.dir/geometry/sphere.cpp.i
 .PHONY : geometry/sphere.cpp.i
 
 geometry/sphere.s: geometry/sphere.cpp.s
@@ -312,8 +298,7 @@ geometry/sphere.s: geometry/sphere.cpp.s
 
 # target to generate assembly for a file
 geometry/sphere.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/sphere.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/geometry/sphere.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry_lib.dir/build.make CMakeFiles/geometry_lib.dir/geometry/sphere.cpp.s
 .PHONY : geometry/sphere.cpp.s
 
 geometry/triangle.o: geometry/triangle.cpp.o
@@ -321,8 +306,7 @@ geometry/triangle.o: geometry/triangle.cpp.o
 
 # target to build an object file
 geometry/triangle.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/triangle.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/geometry/triangle.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry_lib.dir/build.make CMakeFiles/geometry_lib.dir/geometry/triangle.cpp.o
 .PHONY : geometry/triangle.cpp.o
 
 geometry/triangle.i: geometry/triangle.cpp.i
@@ -330,8 +314,7 @@ geometry/triangle.i: geometry/triangle.cpp.i
 
 # target to preprocess a source file
 geometry/triangle.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/triangle.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/geometry/triangle.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry_lib.dir/build.make CMakeFiles/geometry_lib.dir/geometry/triangle.cpp.i
 .PHONY : geometry/triangle.cpp.i
 
 geometry/triangle.s: geometry/triangle.cpp.s
@@ -339,57 +322,8 @@ geometry/triangle.s: geometry/triangle.cpp.s
 
 # target to generate assembly for a file
 geometry/triangle.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/geometry/triangle.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/geometry/triangle.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry_lib.dir/build.make CMakeFiles/geometry_lib.dir/geometry/triangle.cpp.s
 .PHONY : geometry/triangle.cpp.s
-
-geometry_main.o: geometry_main.cpp.o
-.PHONY : geometry_main.o
-
-# target to build an object file
-geometry_main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry.dir/build.make CMakeFiles/geometry.dir/geometry_main.cpp.o
-.PHONY : geometry_main.cpp.o
-
-geometry_main.i: geometry_main.cpp.i
-.PHONY : geometry_main.i
-
-# target to preprocess a source file
-geometry_main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry.dir/build.make CMakeFiles/geometry.dir/geometry_main.cpp.i
-.PHONY : geometry_main.cpp.i
-
-geometry_main.s: geometry_main.cpp.s
-.PHONY : geometry_main.s
-
-# target to generate assembly for a file
-geometry_main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/geometry.dir/build.make CMakeFiles/geometry.dir/geometry_main.cpp.s
-.PHONY : geometry_main.cpp.s
-
-imaging/imaging.o: imaging/imaging.cpp.o
-.PHONY : imaging/imaging.o
-
-# target to build an object file
-imaging/imaging.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/imaging.dir/build.make CMakeFiles/imaging.dir/imaging/imaging.cpp.o
-.PHONY : imaging/imaging.cpp.o
-
-imaging/imaging.i: imaging/imaging.cpp.i
-.PHONY : imaging/imaging.i
-
-# target to preprocess a source file
-imaging/imaging.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/imaging.dir/build.make CMakeFiles/imaging.dir/imaging/imaging.cpp.i
-.PHONY : imaging/imaging.cpp.i
-
-imaging/imaging.s: imaging/imaging.cpp.s
-.PHONY : imaging/imaging.s
-
-# target to generate assembly for a file
-imaging/imaging.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/imaging.dir/build.make CMakeFiles/imaging.dir/imaging/imaging.cpp.s
-.PHONY : imaging/imaging.cpp.s
 
 imaging/imaging_lib.o: imaging/imaging_lib.cpp.o
 .PHONY : imaging/imaging_lib.o
@@ -420,7 +354,7 @@ light/point_light.o: light/point_light.cpp.o
 
 # target to build an object file
 light/point_light.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/light/point_light.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/light_lib.dir/build.make CMakeFiles/light_lib.dir/light/point_light.cpp.o
 .PHONY : light/point_light.cpp.o
 
 light/point_light.i: light/point_light.cpp.i
@@ -428,7 +362,7 @@ light/point_light.i: light/point_light.cpp.i
 
 # target to preprocess a source file
 light/point_light.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/light/point_light.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/light_lib.dir/build.make CMakeFiles/light_lib.dir/light/point_light.cpp.i
 .PHONY : light/point_light.cpp.i
 
 light/point_light.s: light/point_light.cpp.s
@@ -436,56 +370,32 @@ light/point_light.s: light/point_light.cpp.s
 
 # target to generate assembly for a file
 light/point_light.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/light/point_light.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/light_lib.dir/build.make CMakeFiles/light_lib.dir/light/point_light.cpp.s
 .PHONY : light/point_light.cpp.s
 
-ray.o: ray.cpp.o
-.PHONY : ray.o
+ray/ray_lib.o: ray/ray_lib.cpp.o
+.PHONY : ray/ray_lib.o
 
 # target to build an object file
-ray.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/ray.cpp.o
-.PHONY : ray.cpp.o
+ray/ray_lib.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray_lib.dir/build.make CMakeFiles/ray_lib.dir/ray/ray_lib.cpp.o
+.PHONY : ray/ray_lib.cpp.o
 
-ray.i: ray.cpp.i
-.PHONY : ray.i
-
-# target to preprocess a source file
-ray.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/ray.cpp.i
-.PHONY : ray.cpp.i
-
-ray.s: ray.cpp.s
-.PHONY : ray.s
-
-# target to generate assembly for a file
-ray.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray.dir/build.make CMakeFiles/ray.dir/ray.cpp.s
-.PHONY : ray.cpp.s
-
-ray_lib.o: ray_lib.cpp.o
-.PHONY : ray_lib.o
-
-# target to build an object file
-ray_lib.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/ray_lib.cpp.o
-.PHONY : ray_lib.cpp.o
-
-ray_lib.i: ray_lib.cpp.i
-.PHONY : ray_lib.i
+ray/ray_lib.i: ray/ray_lib.cpp.i
+.PHONY : ray/ray_lib.i
 
 # target to preprocess a source file
-ray_lib.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/ray_lib.cpp.i
-.PHONY : ray_lib.cpp.i
+ray/ray_lib.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray_lib.dir/build.make CMakeFiles/ray_lib.dir/ray/ray_lib.cpp.i
+.PHONY : ray/ray_lib.cpp.i
 
-ray_lib.s: ray_lib.cpp.s
-.PHONY : ray_lib.s
+ray/ray_lib.s: ray/ray_lib.cpp.s
+.PHONY : ray/ray_lib.s
 
 # target to generate assembly for a file
-ray_lib.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/ray_lib.cpp.s
-.PHONY : ray_lib.cpp.s
+ray/ray_lib.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ray_lib.dir/build.make CMakeFiles/ray_lib.dir/ray/ray_lib.cpp.s
+.PHONY : ray/ray_lib.cpp.s
 
 # Help Target
 help:
@@ -496,10 +406,10 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... generate_image"
-	@echo "... geometry"
-	@echo "... imaging"
+	@echo "... geometry_lib"
 	@echo "... imaging_lib"
-	@echo "... ray"
+	@echo "... light_lib"
+	@echo "... ray_lib"
 	@echo "... generate_image.o"
 	@echo "... generate_image.i"
 	@echo "... generate_image.s"
@@ -518,24 +428,15 @@ help:
 	@echo "... geometry/triangle.o"
 	@echo "... geometry/triangle.i"
 	@echo "... geometry/triangle.s"
-	@echo "... geometry_main.o"
-	@echo "... geometry_main.i"
-	@echo "... geometry_main.s"
-	@echo "... imaging/imaging.o"
-	@echo "... imaging/imaging.i"
-	@echo "... imaging/imaging.s"
 	@echo "... imaging/imaging_lib.o"
 	@echo "... imaging/imaging_lib.i"
 	@echo "... imaging/imaging_lib.s"
 	@echo "... light/point_light.o"
 	@echo "... light/point_light.i"
 	@echo "... light/point_light.s"
-	@echo "... ray.o"
-	@echo "... ray.i"
-	@echo "... ray.s"
-	@echo "... ray_lib.o"
-	@echo "... ray_lib.i"
-	@echo "... ray_lib.s"
+	@echo "... ray/ray_lib.o"
+	@echo "... ray/ray_lib.i"
+	@echo "... ray/ray_lib.s"
 .PHONY : help
 
 

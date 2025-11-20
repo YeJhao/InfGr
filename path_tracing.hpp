@@ -1,7 +1,7 @@
 #ifndef PATH_TRACING_HPP
 #define PATH_TRACING_HPP
 
-#include "ray.hpp"
+#include "ray/ray.hpp"
 #include "geometry/geometric_shape.hpp"
 #include "geometry/sphere.hpp"
 #include "geometry/plane.hpp"
@@ -17,6 +17,10 @@
 
 using namespace std;
 
+// Variables de configuración de Path Tracing
+#define MAX_BOUNCES 100     // Límite de seguridad, Russian Roulette terminará antes (mucho antes)
+#define RR_MIN_DEPTH 2      // Profundidad mínima antes de aplicar Russian Roulette
+
 // Estructura para almacenar información de intersección
 struct HitInfo {
     bool hit;
@@ -29,14 +33,16 @@ struct HitInfo {
     double ior;
     GeometricShape* shape;
     
-    // Constructor básico, por defecto
+    // Constructor 
     HitInfo() : hit(false), shape(nullptr) {}
 };
 
 /**
  * Encuentra la intersección más cercana entre un rayo y la escena
  */
-inline HitInfo findClosestIntersection(const Ray& ray, const vector<unique_ptr<GeometricShape>>& shapes, const Point& rayOrigin) {
+inline HitInfo findClosestIntersection(const Ray& ray, 
+                    const vector<unique_ptr<GeometricShape>>& shapes, 
+                    const Point& rayOrigin) {
     HitInfo hitInfo;
     double minDistance = numeric_limits<double>::max();
     
@@ -159,7 +165,6 @@ inline Direction localToWorld(const Direction& localDir, const Direction& normal
  * @param gen Generador de números aleatorios
  * @param dis Distribución uniforme [0,1]
  * @param depth Profundidad actual de recursión
- * @param maxDepth Profundidad máxima (límite de seguridad)
  * @return Color/radiancia acumulada
  */
 inline Color pathTrace(const Ray& ray, 
@@ -167,15 +172,9 @@ inline Color pathTrace(const Ray& ray,
                        const vector<unique_ptr<PointLight>>& lights,
                        mt19937& gen,
                        uniform_real_distribution<double>& dis,
-                       int depth,
-                       int maxDepth,
-                       int rrMinDepth = 2) {
-    
-    // Parámetros de Russian Roulette
-    const int minDepth = rrMinDepth; // Profundidad mínima antes de aplicar RR
-    
+                       int depth) {   
     // Límite de seguridad (por si acaso)
-    if (depth >= maxDepth) {
+    if (depth >= MAX_BOUNCES) {
         return Color(0, 0, 0);
     }
     
@@ -239,7 +238,7 @@ inline Color pathTrace(const Ray& ray,
     // RUSSIAN ROULETTE - Terminación
     // ============================================
     double rrValue = dis(gen);
-    if (depth >= minDepth) {
+    if (depth >= RR_MIN_DEPTH) {
         if (rrValue < pkill){
             return L; // Terminar el path aquí
         }
@@ -331,7 +330,7 @@ inline Color pathTrace(const Ray& ray,
     Ray newRay(hit.point, newRayDir);
     
     // Trazar recursivamente
-    Color Li = pathTrace(newRay, shapes, lights, gen, dis, depth + 1, maxDepth, rrMinDepth);
+    Color Li = pathTrace(newRay, shapes, lights, gen, dis, depth + 1);
     
     // Acumular iluminación indirecta
     L = L + (throughput * Li);

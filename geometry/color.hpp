@@ -1,3 +1,11 @@
+/*
+* color.hpp
+* Autores: Jiahao Ye (875490) & Raúl Soler Fernández (875478)
+*
+* Este fichero contiene la definición de la clase Color,
+* que representa colores RGB y operaciones básicas con ellos.
+*/
+
 #ifndef COLOR_HPP
 #define COLOR_HPP
 

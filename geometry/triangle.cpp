@@ -1,5 +1,13 @@
+/*
+* triangle.cpp
+* Autores: Jiahao Ye (875490) & Raúl Soler Fernández (875478)
+*
+* Este fichero contiene la implementación de la clase Triangle,
+* que representa un triángulo en el espacio 3D y sus intersecciones con rayos.
+*/
+
 #include "triangle.hpp"
-#include "../ray.hpp"
+#include "../ray/ray.hpp"
 #include <iostream>
 #include <cmath>
 
@@ -34,10 +42,37 @@ Triangle::Triangle(const Point& vertex0, const Point& vertex1, const Point& vert
     computeNormal();
 }
 
+/**
+* Calcula la normal del triángulo usando el producto cruzado de dos aristas.
+*/
 void Triangle::computeNormal() {
     Direction edge1 = v1 - v0;
     Direction edge2 = v2 - v0;
     normal = edge1.cross(edge2).normalized();
+}
+
+/**
+* Verifica si un punto dado está dentro del triángulo usando coordenadas baricéntricas.
+* @param p Punto a verificar.
+* @return true si el punto está dentro del triángulo, false en caso contrario.
+*/
+bool Triangle::isPointInside(const Point& p) const {
+    // Using barycentric coordinates method
+    Direction v0v1 = v1 - v0;
+    Direction v0v2 = v2 - v0;
+    Direction v0p = p - v0;
+    
+    double dot00 = v0v2.dot(v0v2);
+    double dot01 = v0v2.dot(v0v1);
+    double dot02 = v0v2.dot(v0p);
+    double dot11 = v0v1.dot(v0v1);
+    double dot12 = v0v1.dot(v0p);
+    
+    double invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
+    double u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+    double v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+    
+    return (u >= 0) && (v >= 0) && (u + v <= 1);
 }
 
 std::vector<Point> Triangle::intersections(const Ray& ray) const {
@@ -62,25 +97,6 @@ std::vector<Point> Triangle::intersections(const Ray& ray) const {
     }
     
     return intersectionPoints;
-}
-
-bool Triangle::isPointInside(const Point& p) const {
-    // Using barycentric coordinates method
-    Direction v0v1 = v1 - v0;
-    Direction v0v2 = v2 - v0;
-    Direction v0p = p - v0;
-    
-    double dot00 = v0v2.dot(v0v2);
-    double dot01 = v0v2.dot(v0v1);
-    double dot02 = v0v2.dot(v0p);
-    double dot11 = v0v1.dot(v0v1);
-    double dot12 = v0v1.dot(v0p);
-    
-    double invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
-    double u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-    double v = (dot00 * dot12 - dot01 * dot02) * invDenom;
-    
-    return (u >= 0) && (v >= 0) && (u + v <= 1);
 }
 
 void Triangle::print() const {

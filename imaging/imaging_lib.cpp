@@ -1,3 +1,12 @@
+/*
+* imaging_lib.cpp
+* Autores: Jiahao Ye (875490) & Raúl Soler Fernández (875478)
+*
+* Este fichero contiene la implementación de la clase Image y PixelRGB,
+* además de las funciones para cargar y guardar imágenes HDR y LDR y de 
+* procesamiento de Imágenes con tone mapping
+*/
+
 #include "imaging.hpp"
 #include <stdexcept>
 #include <iostream>
@@ -14,27 +23,29 @@ using namespace std;
 using namespace Imf;
 using namespace Imath;
 
-// PixelRGB implementations
+// Implementaciones de PixelRGB
 PixelRGB::PixelRGB() : R(0.0), G(0.0), B(0.0) {}
 PixelRGB::PixelRGB(double r, double g, double b) : R(r), G(g), B(b) {}
 
+// Suma de píxeles
 PixelRGB PixelRGB::operator+(const PixelRGB& other) const {
     return PixelRGB(R + other.R, G + other.G, B + other.B);
 }
 
+// Multiplicación por escalar
 PixelRGB PixelRGB::operator*(double scalar) const {
     return PixelRGB(R * scalar, G * scalar, B * scalar);
 }
 
-// Image implementations
+// Implementaciones de Image
 Image::Image(int w, int h) : width(w), height(h) {
-    imagen = new PixelRGB*[height]; // Rows
+    imagen = new PixelRGB*[height]; // Filas
     for (int i = 0; i < height; ++i) {
-        imagen[i] = new PixelRGB[width]; // Columns
+        imagen[i] = new PixelRGB[width]; // Columnas
     }
 }
 
-// Copy constructor
+// Constructor de copia
 Image::Image(const Image& other) : width(other.width), height(other.height) {
     imagen = new PixelRGB*[height];
     for (int i = 0; i < height; ++i) {
@@ -53,10 +64,10 @@ Image::~Image() {
     delete[] imagen;
 }
 
-// Addition operator
+// Operador de suma
 Image Image::operator+(const Image& other) const {
     if (width != other.width || height != other.height) {
-        throw invalid_argument("Images must have the same dimensions for addition.");
+        throw invalid_argument("Las imágenes deben tener las mismas dimensiones para la suma.");
     }
 
     Image result(width, height);
@@ -68,9 +79,10 @@ Image Image::operator+(const Image& other) const {
     return result;
 }
 
+// Operador de asignación
 Image& Image::operator=(const Image& other) {
     if (this != &other) {
-        // Free existing memory
+        // Liberar memoria existente
         for (int i = 0; i < height; ++i) {
             delete[] imagen[i];
         }
@@ -113,34 +125,34 @@ void saveHDRImage(const Image& img, const string& filename) {
         file.setFrameBuffer(&pixels[0][0], 1, img.width);
         file.writePixels(img.height);
     } catch (const std::exception& e) {
-        throw runtime_error("Cannot create HDR: " + string(e.what()));
+        throw runtime_error("Error al guardar HDR: " + string(e.what()));
     }
 }
 
-// Function to save LDR image as PNG
+// Función para guardar imagen LDR como PNG
 void savePNGImage(const Image& img, const string& filename) {
     FILE *file = fopen(filename.c_str(), "wb");
     if (!file) {
-        throw runtime_error("Cannot open file for writing: " + filename);
+        throw runtime_error("No se puede abrir el archivo para escritura: " + filename);
     }
     
     png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     if (!png) {
         fclose(file);
-        throw runtime_error("Cannot create PNG write structure");
+        throw runtime_error("No se puede crear la estructura de escritura PNG");
     }
     
     png_infop info = png_create_info_struct(png);
     if (!info) {
         png_destroy_write_struct(&png, NULL);
         fclose(file);
-        throw runtime_error("Cannot create PNG info structure");
+        throw runtime_error("No se puede crear la estructura de información PNG");
     }
     
     if (setjmp(png_jmpbuf(png))) {
         png_destroy_write_struct(&png, &info);
         fclose(file);
-        throw runtime_error("Error during PNG creation");
+        throw runtime_error("Error durante la creación del PNG");
     }
     
     png_init_io(png, file);
@@ -149,12 +161,12 @@ void savePNGImage(const Image& img, const string& filename) {
     
     png_write_info(png, info);
     
-    // Create row pointers
+    // Crear punteros a filas
     png_bytep* row_pointers = new png_bytep[img.height];
     for (int i = 0; i < img.height; ++i) {
         row_pointers[i] = new png_byte[img.width * 3];
         for (int j = 0; j < img.width; ++j) {
-            // Clamp values to [0, 1] and convert to [0, 255]
+            // Limitar valores a [0, 1] y convertir a [0, 255] -> clampear
             row_pointers[i][j * 3] = static_cast<png_byte>(max(0.0, min(1.0, img.imagen[i][j].R)) * 255);
             row_pointers[i][j * 3 + 1] = static_cast<png_byte>(max(0.0, min(1.0, img.imagen[i][j].G)) * 255);
             row_pointers[i][j * 3 + 2] = static_cast<png_byte>(max(0.0, min(1.0, img.imagen[i][j].B)) * 255);
@@ -164,7 +176,7 @@ void savePNGImage(const Image& img, const string& filename) {
     png_write_image(png, row_pointers);
     png_write_end(png, NULL);
     
-    // Clean up
+    // Limpiar memoria
     for (int i = 0; i < img.height; ++i) {
         delete[] row_pointers[i];
     }
@@ -173,10 +185,10 @@ void savePNGImage(const Image& img, const string& filename) {
     png_destroy_write_struct(&png, &info);
     fclose(file);
     
-    cout << "LDR image saved successfully as: " << filename << endl;
+    cout << "Imagen LDR guardada como: " << filename << endl;
 }
 
-// Additional imaging functions (you can add them as needed)
+// Clamping
 Image clamping(const Image& img) {
     Image result(img.width, img.height);
     for (int i = 0; i < img.height; ++i) {
@@ -189,12 +201,13 @@ Image clamping(const Image& img) {
     return result;
 }
 
+// Ecualización
 Image ecualization(const Image& img) {
     double minR = 1e9, maxR = -1e9;
     double minG = 1e9, maxG = -1e9;
     double minB = 1e9, maxB = -1e9;
 
-    // Find min and max for each channel
+    // Encontrar mínimo y máximo para cada canal
     for (int i = 0; i < img.height; ++i) {
         for (int j = 0; j < img.width; ++j) {
             minR = min(minR, img.imagen[i][j].R);
@@ -207,7 +220,7 @@ Image ecualization(const Image& img) {
     }
 
     Image result(img.width, img.height);
-    // Normalize each channel
+    // Normalizar cada canal
     for (int i = 0; i < img.height; ++i) {
         for (int j = 0; j < img.width; ++j) {
             result.imagen[i][j].R = (maxR > minR) ? (img.imagen[i][j].R - minR) / (maxR - minR) : 0.0;
@@ -218,12 +231,13 @@ Image ecualization(const Image& img) {
     return result;
 }
 
+// Clamp y ecualización
 Image clamp_ecualization(const Image& img, double threshold) {
     double minR = 1e9, maxR = -1e9;
     double minG = 1e9, maxG = -1e9;
     double minB = 1e9, maxB = -1e9;
 
-    // Find min and max for each channel
+    // Encontrar mínimo y máximo para cada canal
     for (int i = 0; i < img.height; ++i) {
         for (int j = 0; j < img.width; ++j) {
             minR = min(minR, img.imagen[i][j].R);
@@ -238,7 +252,7 @@ Image clamp_ecualization(const Image& img, double threshold) {
     Image result(img.width, img.height);
     for (int i = 0; i < img.height; ++i) {
         for (int j = 0; j < img.width; ++j) {
-            // Clamp and normalize
+            // Clamp y normalizar
             double clampedR = min(threshold, img.imagen[i][j].R);
             double clampedG = min(threshold, img.imagen[i][j].G);
             double clampedB = min(threshold, img.imagen[i][j].B);
@@ -251,6 +265,7 @@ Image clamp_ecualization(const Image& img, double threshold) {
     return result;
 }
 
+// Curva gamma
 Image gamma_curve(const Image& img, double gamma) {
     Image result(img.width, img.height);
     for (int i = 0; i < img.height; ++i) {
@@ -263,15 +278,16 @@ Image gamma_curve(const Image& img, double gamma) {
     return result;
 }
 
+// Clamping + Curva gamma
 Image clamp_gamma(const Image& img, double clamp_threshold, double gamma) {
     // 1. Clamping
     Image clamped = clamp_ecualization(img, clamp_threshold);
-    // 2. Gamma curve
+    // 2. Curva gamma
     Image gamma_img = gamma_curve(clamped, gamma);
     return gamma_img;
 }
 
-// Function to load HDR image from OpenEXR file
+// Función para cargar imagen HDR mediante OpenEXR
 Image loadHDRImage(const string& filename) {
     try {
         RgbaInputFile file(filename.c_str());
@@ -294,10 +310,10 @@ Image loadHDRImage(const string& filename) {
             }
         }
         
-        cout << "HDR image loaded successfully: " << width << "x" << height << " pixels" << endl;
+        cout << "Imagen HDR cargada exitosamente: " << width << "x" << height << " pixels" << endl;
         return img;
         
     } catch (const exception& e) {
-        throw runtime_error("Error loading HDR file: " + string(e.what()));
+        throw runtime_error("Error al cargar archivo HDR: " + string(e.what()));
     }
 }

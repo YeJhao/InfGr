@@ -1,128 +1,79 @@
-cmake_minimum_required(VERSION 3.16)
-project(InfGr)
+cmake_minimum_required(VERSION 3.10)
+project(InformaticaGrafica)
 
-# Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Set output directory for executables
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/executables)
-
-# Check and install required packages
-function(check_and_install_package package_name apt_package)
-    execute_process(
-        COMMAND dpkg -l ${apt_package}
-        RESULT_VARIABLE package_result
-        OUTPUT_QUIET
-        ERROR_QUIET
-    )
-    
-    if(NOT package_result EQUAL 0)
-        message(STATUS "Installing ${package_name}...")
-        execute_process(
-            COMMAND sudo apt install -y ${apt_package}
-            RESULT_VARIABLE install_result
-        )
-        if(install_result EQUAL 0)
-            message(STATUS "${package_name} installed successfully")
-        else()
-            message(FATAL_ERROR "Failed to install ${package_name}")
-        endif()
-    else()
-        message(STATUS "${package_name} is already installed")
-    endif()
-endfunction()
-
-# Check and install required packages
-check_and_install_package("CMake" "cmake")
-check_and_install_package("libpng-dev" "libpng-dev")
-check_and_install_package("libopenexr-dev" "libopenexr-dev")
-check_and_install_package("libeigen3-dev" "libeigen3-dev")
-
-# Find required packages
-find_package(PNG REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(OPENEXR REQUIRED OpenEXR)
+# Buscar librerías necesarias
+find_package(OpenEXR REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(PNG REQUIRED)
 
-# Create executable for geometry.cpp
-add_executable(geometry 
-    ${CMAKE_CURRENT_SOURCE_DIR}/geometry_main.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/geometry.cpp
-)
-target_link_libraries(geometry 
-    PNG::PNG
-    ${OPENEXR_LIBRARIES}
-    Eigen3::Eigen
-)
-target_include_directories(geometry PRIVATE
-    ${OPENEXR_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}
+# Directorio de ejecutables
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/executables)
+
+# Librería de geometría
+add_library(geometry_lib STATIC
+    geometry/geometry.cpp
+    geometry/color.cpp
+    geometry/plane.cpp
+    geometry/sphere.cpp
+    geometry/triangle.cpp
 )
 
-# Create executable for imaging.cpp
-add_executable(imaging ${CMAKE_CURRENT_SOURCE_DIR}/imaging/imaging.cpp)
-target_link_libraries(imaging 
-    PNG::PNG
-    ${OPENEXR_LIBRARIES}
-)
-target_include_directories(imaging PRIVATE
-    ${OPENEXR_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}
+target_include_directories(geometry_lib PUBLIC 
+    ${CMAKE_SOURCE_DIR}
+    ${EIGEN3_INCLUDE_DIR}
 )
 
-# Create executable for ray.cpp
-add_executable(ray 
-    ${CMAKE_CURRENT_SOURCE_DIR}/ray.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/geometry.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/sphere.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/plane.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/triangle.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/color.cpp
-)
-target_link_libraries(ray 
-    PNG::PNG
-    ${OPENEXR_LIBRARIES}
-    Eigen3::Eigen
-)
-target_include_directories(ray PRIVATE
-    ${OPENEXR_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}
+# Librería de imaging
+add_library(imaging_lib STATIC
+    imaging/imaging_lib.cpp
 )
 
-# Create a library for imaging functions (without main)
-add_library(imaging_lib 
-    ${CMAKE_CURRENT_SOURCE_DIR}/imaging/imaging_lib.cpp
+target_include_directories(imaging_lib PUBLIC 
+    ${CMAKE_SOURCE_DIR}
+    ${PNG_INCLUDE_DIRS}
 )
 target_link_libraries(imaging_lib 
+    OpenEXR::OpenEXR
     PNG::PNG
-    ${OPENEXR_LIBRARIES}
-)
-target_include_directories(imaging_lib PRIVATE
-    ${OPENEXR_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# Create executable for generate_image.cpp
-add_executable(generate_image 
-    ${CMAKE_CURRENT_SOURCE_DIR}/generate_image.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ray_lib.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/geometry.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/sphere.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/plane.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/triangle.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/geometry/color.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/light/point_light.cpp
+# Librería de lights
+add_library(light_lib STATIC
+    light/point_light.cpp
 )
-target_link_libraries(generate_image 
+
+target_include_directories(light_lib PUBLIC 
+    ${CMAKE_SOURCE_DIR}
+    ${EIGEN3_INCLUDE_DIR}
+)
+
+# Librería de ray tracing (ahora en carpeta ray/)
+add_library(ray_lib STATIC
+    ray/ray_lib.cpp
+)
+
+target_include_directories(ray_lib PUBLIC 
+    ${CMAKE_SOURCE_DIR}
+    ${EIGEN3_INCLUDE_DIR}
+)
+target_link_libraries(ray_lib geometry_lib)
+
+# Ejecutable principal: generate_image
+add_executable(generate_image
+    generate_image.cpp
+)
+
+target_include_directories(generate_image PRIVATE 
+    ${CMAKE_SOURCE_DIR}
+    ${EIGEN3_INCLUDE_DIR}
+)
+target_link_libraries(generate_image
+    geometry_lib
     imaging_lib
-    PNG::PNG
-    ${OPENEXR_LIBRARIES}
-    Eigen3::Eigen
+    light_lib
+    ray_lib
+    OpenEXR::OpenEXR
 )
-target_include_directories(generate_image PRIVATE
-    ${OPENEXR_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-message(STATUS "Executables will be placed in: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")

@@ -1,3 +1,11 @@
+/*
+* bsdf_utils.hpp
+* Autores: Jiahao Ye (875490) & Raúl Soler Fernández (875478)
+*
+* Este fichero contiene utilidades para el manejo de BSDFs,
+* incluyendo funciones para calcular reflexiones y refracciones perfectas.
+*/
+
 #ifndef BSDF_UTILS_HPP
 #define BSDF_UTILS_HPP
 
@@ -17,7 +25,7 @@ inline Direction perfectReflection(const Direction& wo, const Direction& n) {
 
 /**
  * Calcula la dirección de refracción perfecta usando la ley de Snell
- * @param wo Dirección de salida (hacia el observador, normalizada)
+ * @param wo Dirección de salida (hacia el observador)
  * @param n Normal de la superficie (normalizada, apunta hacia el medio "from")
  * @param iorFrom Índice de refracción del medio de origen
  * @param iorTo Índice de refracción del medio de destino

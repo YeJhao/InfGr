@@ -1,5 +1,13 @@
+/*
+* plane.cpp
+* Autores: Jiahao Ye (875490) & Raúl Soler Fernández (875478)
+*
+* Este fichero contiene la implementación de la clase Plane,
+* que representa un plano en el espacio 3D y sus intersecciones con rayos.
+*/
+
 #include "plane.hpp"
-#include "../ray.hpp"
+#include "../ray/ray.hpp"
 #include <cmath>
 #include <iostream>
 

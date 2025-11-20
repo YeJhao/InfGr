@@ -1,3 +1,12 @@
+/*
+* imaging.hpp
+* Autores: Jiahao Ye (875490) & Raúl Soler Fernández (875478)
+*
+* Este fichero contiene la definición de la clase Image y PixelRGB,
+* además de las funciones para cargar y guardar imágenes HDR y LDR y de 
+* procesamiento de Imágenes con tone mapping
+*/
+
 #ifndef IMAGING_HPP
 #define IMAGING_HPP
 
@@ -22,22 +31,23 @@ class Image {
         int width;
         int height;
 
-        // Empty image constructor
+        // Constructor de imagen vacía
         Image(int w, int h);
 
-        // Copy constructor
+        // CConstructor de copia
         Image(const Image& other);
 
         // Destructor
         ~Image();
 
-        // Addition operator
+        // Operador de suma
         Image operator+(const Image& other) const;
 
+        // Operador de asignación
         Image& operator=(const Image& other);
 };
 
-// Function prototypes
+// Funciones de imagen HDR
 Image loadHDRImage(const string& filename);
 void saveHDRImage(const Image& img, const string& filename);
 void savePNGImage(const Image& img, const string& filename);
