@@ -193,18 +193,10 @@ void cb_top_AL_specular_spheres(vector<unique_ptr<GeometricShape>>& shapes, vect
     shapes.push_back(make_unique<Plane>(planoDerecha));
 
     // Esferas especulares
-    cout << "Esfera izquierda con color? (S/N): ";
-    char respuesta;
-    cin >> respuesta;
-    Color kd(0,0,0);
-    if (respuesta == 'S' || respuesta == 's') kd = (0.8, 0.6, 0.9); else kd = (1,1,1);
-    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), kd, Color(0,0,0));
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(1,1,1), Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaIzquierda));
     
-    cout << "Esfera derecha con color? (S/N): ";
-    cin >> respuesta;
-    if (respuesta == 'S' || respuesta == 's') kd = (0.5, 0.9, 0.9); else kd = (1,1,1);
-    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), kd, Color(0,0,0));
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(1,1,1), Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaDerecha));
 
 
@@ -392,8 +384,6 @@ int main() {
     cin >> pixelWidth;
     int pixelHeight;
     cin >> pixelHeight;
-
-    int numPixels = pixelWidth * pixelHeight;
 
     vector<unique_ptr<GeometricShape>> shapes;
     vector<unique_ptr<PointLight>> lights;
@@ -622,14 +612,13 @@ int main() {
 
                 try {
                     saveHDRImage(image, filenameExr);
-                    cout << "Imagen HDR guardada exitosamente como: " << filenameExr << endl;
+                    cout << "Imagen HDR guardada como: " << filenameExr << endl;
                 } catch (const exception& e) {
                     cout << "Error al guardar la imagen HDR: " << e.what() << endl;
                 }
                 
                 string filenamePng;
                 try {
-                    //Image equalized = ecualization(image);
                     Image ldr_image = gamma_curve(image, 2.2);
                     filenamePng = nameInput + ".png";
                     savePNGImage(ldr_image, filenamePng);

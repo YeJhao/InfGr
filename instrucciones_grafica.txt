@@ -1,0 +1,20 @@
+-- INSTALAR DEPENDENCIAS
+# Instalar vcpkg si no lo tienes
+git clone https://github.com/Microsoft/vcpkg.git
+cd vcpkg
+.\bootstrap-vcpkg.bat
+
+# Instalar las librerías
+.\vcpkg install openexr:x64-windows
+.\vcpkg install eigen3:x64-windows
+.\vcpkg install libpng:x64-windows
+
+# Integrar con CMake
+.\vcpkg integrate install
+
+
+-- COMPILAR
+mkdir build
+cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake --build . --config Release
