@@ -158,6 +158,95 @@ inline Direction localToWorld(const Direction& localDir, const Direction& normal
 }
 
 /**
+ * Calcula las probabilidades de cada lóbulo de la BSDF y la probabilidad de terminar el camino
+ */
+inline void calculateProbabilities(const HitInfo& hit, double& pKill, double& pDiff, double& pSpec, double& pTrans) {
+    double maxKd = max(hit.kd.r, max(hit.kd.g, hit.kd.b)); 
+    double maxKs = max(hit.ks.r, max(hit.ks.g, hit.ks.b));
+    double maxKt = max(hit.kt.r, max(hit.kt.g, hit.kt.b));
+    double s = max(1.0, (maxKd + maxKs + maxKt + 0.1));
+    
+    // Probabilidad de matar el fotón
+    double pdiff = (maxKd / s);
+    double pspec = (maxKs / s);
+    double ptrans = (maxKt / s);
+    double pKill = 1.0 - pdiff - pspec - ptrans;
+
+    // Normalización por si no matamos el camino del fotón
+    double pContinue = 1.0 - pKill;
+    pDiff = pdiff / pContinue;
+    pSpec = pspec / pContinue;
+    pTrans = ptrans / pContinue;
+}
+
+/**
+ * Calcula la nueva dirección del rayo y el throughput según el lóbulo seleccionado
+ */
+inline void calculateThroughput(const HitInfo& hit, const double pDiff, const double pSpec,
+                        const double rrValue, Direction& newRayDir, Color& throughput) {
+    if (rrValue < pDiff) {
+        // ===== LÓBULO DIFUSO =====
+        // Muestreo con distribución de coseno
+        Direction tangent, bitangent;
+        buildOrthonormalBasis(hit.normal, tangent, bitangent);
+        Direction localDir = cosineSampleHemisphere(gen, dis);
+        newRayDir = localToWorld(localDir, hit.normal, tangent, bitangent);
+
+        // BRDF difusa: kd / π
+        // PDF del muestreo de coseno: cos(θ) / π
+        // throughput = BRDF * cos(θ) / PDF = kd / π * cos(θ) / (cos(θ) / π) = kd
+        throughput = hit.kd / pDiff;
+
+    } else if (rrValue < pSpec) {
+        // ===== LÓBULO ESPECULAR (Reflexión perfecta) =====
+        Direction wo = ray.d * (-1.0); // Dirección hacia afuera (opuesta al rayo incidente)
+        newRayDir = perfectReflection(wo, hit.normal);
+
+        throughput = hit.ks / pSpec;
+       
+    } else {
+        // ===== LÓBULO DE TRANSMISIÓN (Refracción) =====
+        Direction wo = ray.d * (-1.0); // Dirección hacia afuera
+        
+        // Determinar si estamos entrando o saliendo del objeto
+        // Si n·wo > 0, el rayo viene del exterior (entrando)
+        // Si n·wo < 0, el rayo viene del interior (saliendo)
+        double cosTheta = hit.normal.dot(wo);
+        
+        // IORs por defecto (estos valores deberían venir de las geometrías en el futuro)
+        double iorFrom, iorTo;
+        Direction effectiveNormal;
+        
+        if (cosTheta > 0) {
+            // Entrando al objeto: aire -> material
+            iorFrom = 1.0;  // IOR del aire
+            iorTo = hit.ior;    // IOR del material
+            effectiveNormal = hit.normal;
+        } else {
+            // Saliendo del objeto: material -> aire
+            iorFrom = hit.ior;  // IOR del material
+            iorTo = 1.0;    // IOR del aire
+            effectiveNormal = hit.normal * (-1.0); // Invertir la normal
+            cosTheta = -cosTheta; // Corregir el coseno
+        }
+        
+        // Calcular dirección refractada
+        Direction wt = perfectRefraction(wo, effectiveNormal, iorFrom, iorTo);
+        
+        // Comprobar si hubo reflexión interna total
+        if (wt.d[0] == 0 && wt.d[1] == 0 && wt.d[2] == 0) {
+            // Reflexión interna total - usar reflexión en lugar de refracción
+            newRayDir = perfectReflection(wo, effectiveNormal);
+        } else {
+            // Refracción exitosa
+            newRayDir = wt;
+        }
+
+        throughput = hit.kt / pTrans;
+    }
+}
+
+/**
  * Calcula la radiancia entrante mediante path tracing recursivo
  * @param ray Rayo actual
  * @param shapes Geometrías de la escena
@@ -223,16 +312,8 @@ inline Color pathTrace(const Ray& ray,
     // ============================================
     
     // Calcular probabilidades de cada lóbulo de la BSDF
-    double maxKd = max(hit.kd.r, max(hit.kd.g, hit.kd.b)); 
-    double maxKs = max(hit.ks.r, max(hit.ks.g, hit.ks.b));
-    double maxKt = max(hit.kt.r, max(hit.kt.g, hit.kt.b));
-    double s = max(1.0, (maxKd + maxKs + maxKt + 0.1));
-    
-    // Probabilidades iniciales (incluyendo pkill)
-    double pdiff = (maxKd / s);
-    double pspec = (maxKs / s);
-    double ptrans = (maxKt / s);
-    double pkill = 1.0 - pdiff - pspec - ptrans;
+    double pKill, pDiff, pSpec, pTrans;
+    calculateProbabilities(hit, pKill, pDiff, pSpec, pTrans);
 
     // ============================================
     // RUSSIAN ROULETTE - Terminación
@@ -243,88 +324,19 @@ inline Color pathTrace(const Ray& ray,
             return L; // Terminar el path aquí
         }
     }
-
-    // Si NO se termina, renormalizar las probabilidades de los lóbulos
-    // (eliminando pkill de las probabilidades)
-    double pContinue = 1.0 - pkill;
-    pdiff = pdiff / pContinue;
-    pspec = pspec / pContinue;
-    ptrans = ptrans / pContinue;
     
+    // Si no terminamos, procedemos a seleccionar el lóbulo y calcular el nuevo rayo
     // Generar nuevo valor aleatorio para seleccionar el lóbulo
     rrValue = dis(gen);
 
     // Probabilidades acumuladas para selección de lóbulo
-    double pDiffuse = pdiff;
-    double pSpecular = pDiffuse + pspec;
+    double pDiffuse = pDiff;
+    double pSpecular = pDiffuse + pSpec;
         
     Direction newRayDir;
     Color throughput; // Factor de transmisión de luz
 
-    if (rrValue < pDiffuse) {
-        // ===== LÓBULO DIFUSO =====
-        // Muestreo con distribución de coseno
-        Direction tangent, bitangent;
-        buildOrthonormalBasis(hit.normal, tangent, bitangent);
-        Direction localDir = cosineSampleHemisphere(gen, dis);
-        newRayDir = localToWorld(localDir, hit.normal, tangent, bitangent);
-        
-        // BRDF difusa: kd / π
-        // PDF del muestreo de coseno: cos(θ) / π
-        // throughput = BRDF * cos(θ) / PDF = kd / π * cos(θ) / (cos(θ) / π) = kd
-        throughput = hit.kd / pdiff; // Dividir por probabilidad de selección
-
-    } else if (rrValue < pSpecular) {
-        // ===== LÓBULO ESPECULAR (Reflexión perfecta) =====
-        Direction wo = ray.d * (-1.0); // Dirección hacia afuera (opuesta al rayo incidente)
-        newRayDir = perfectReflection(wo, hit.normal);
-        
-        // Para reflexión perfecta (BSDF delta), el throughput es simplemente ks
-        throughput = hit.ks / pspec;
-        
-    } else {
-        // ===== LÓBULO DE TRANSMISIÓN (Refracción) =====
-        Direction wo = ray.d * (-1.0); // Dirección hacia afuera
-        
-        // Determinar si estamos entrando o saliendo del objeto
-        // Si n·wo > 0, el rayo viene del exterior (entrando)
-        // Si n·wo < 0, el rayo viene del interior (saliendo)
-        double cosTheta = hit.normal.dot(wo);
-        
-        // IORs por defecto (estos valores deberían venir de las geometrías en el futuro)
-        double iorFrom, iorTo;
-        Direction effectiveNormal;
-        
-        if (cosTheta > 0) {
-            // Entrando al objeto: aire -> material
-            iorFrom = 1.0;  // IOR del aire
-            iorTo = hit.ior;    // IOR del material
-            effectiveNormal = hit.normal;
-        } else {
-            // Saliendo del objeto: material -> aire
-            iorFrom = hit.ior;  // IOR del material
-            iorTo = 1.0;    // IOR del aire
-            effectiveNormal = hit.normal * (-1.0); // Invertir la normal
-            cosTheta = -cosTheta; // Corregir el coseno
-        }
-        
-        // Calcular dirección refractada
-        Direction wt = perfectRefraction(wo, effectiveNormal, iorFrom, iorTo);
-        
-        // Comprobar si hubo reflexión interna total
-        if (wt.d[0] == 0 && wt.d[1] == 0 && wt.d[2] == 0) {
-            // Reflexión interna total - usar reflexión en lugar de refracción
-            newRayDir = perfectReflection(wo, effectiveNormal);
-            // Lo mismo que en los otros lóbulos, dividimos por la probabilidad de selección
-            throughput = hit.kt / ptrans;
-        } else {
-            // Refracción exitosa
-            newRayDir = wt;
-            
-            // Para refracción perfecta (BTDF delta), el throughput es simplemente kt
-            throughput = hit.kt / ptrans;
-        }
-    }
+    calculateThroughput(hit, pDiff, pSpec, rrValue, newRayDir, throughput);
     
     // Crear nuevo rayo
     Ray newRay(hit.point, newRayDir);
