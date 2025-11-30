@@ -509,11 +509,9 @@ int main() {
                     }
                 }
 
-                cout << "Número de fotones (actual " << numPhotons << ", presiona Enter para mantener): ";
+                cout << "Número de rayos para fotones (actual " << numPhotons << ", presiona Enter para mantener): ";
                 string numPhotonsInput;
                 getline(cin, numPhotonsInput);
-                getline(cin, numPhotonsInput); // Segunda llamada para capturar la línea real
-                
                 if (!numPhotonsInput.empty()) {
                     try {
                         int newNumPhotons = stoi(numPhotonsInput);
@@ -521,14 +519,13 @@ int main() {
                             numPhotons = newNumPhotons;
                         }
                     } catch (const exception&) {
-                        cout << "Entrada inválida, manteniendo SPP actual." << endl;
+                        cout << "Entrada inválida, manteniendo número de rayos para fotones actual." << endl;
                     }
                 }
 
-                cout << "Número de vceinos para estimación (actual " << numNeighbors << ", presiona Enter para mantener): ";
+                cout << "Número de vecinos (k) para estimación (actual " << numNeighbors << ", presiona Enter para mantener): ";
                 string numNeighborsInput;
                 getline(cin, numNeighborsInput);
-                getline(cin, numNeighborsInput); // Segunda llamada para capturar la línea real
                 if (!numNeighborsInput.empty()) {
                     try {
                         int newNumNeighbors = stoi(numNeighborsInput);
@@ -553,7 +550,10 @@ int main() {
                 cout << "Cámara configurada en origen (0,0,-3.5) con vectores <l=(-1,0,0), u=(0,1,0), f=(0,0,3)>." << endl;
 
                 cout << "\n=== GENERANDO IMAGEN ===" << endl;
-                cout << "Path tracing con " << raysPerPixel << " rayos por píxel" << endl;
+                cout << "Parámetros:" << endl;
+                cout << "  - Fotones totales: " << numPhotons << endl;
+                cout << "  - K vecinos para estimación: " << numNeighbors << endl;
+                cout << "  - Caminos por píxel (SPP): " << raysPerPixel << endl;
 
                 // Inicio del tiempo de generación
                 auto start_time = std::chrono::high_resolution_clock::now();
@@ -571,9 +571,20 @@ int main() {
                 uniform_real_distribution<double> dis(0.0, 1.0);
 
                 // Paso 1: Generar mapa de fotones lanzando rayos desde la cámara
+                cout << "\n--- PASO 1: Generando mapa de fotones ---" << endl;
+                auto photon_start = std::chrono::high_resolution_clock::now();
+
                 PhotonMap photon_map = generate_photon_map(numPhotons, shapes, lights);
 
+                auto photon_end = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> photon_duration = photon_end - photon_start;
+                cout << "Mapa de fotones generado en " << fixed << setprecision(2) 
+                     << photon_duration.count() << " segundos" << endl;
+
                 // Paso 2: Renderizar la imagen con path tracing y el mapa de fotones
+                cout << "\n--- PASO 2: Renderizando imagen ---" << endl;
+                auto render_start = std::chrono::high_resolution_clock::now();
+
                 for (int i = 0; i < pixelHeight; ++i) {
                     for (int j = 0; j < pixelWidth; ++j) {
                         // Calcular los límites del píxel en coordenadas del mundo
@@ -606,7 +617,7 @@ int main() {
                             Ray ray(camera.origin, rayDirection.normalized());
                             
                             // Trazar el rayo con photon mapping recursivo
-                            Color rayColor = photonMap(ray, shapes, lights, gen, dis, 0, photon_map, numNeighbors);
+                            Color rayColor = photonMap(ray, shapes, lights, 0, photon_map, numNeighbors);
                             
                             // Acumular el color de este rayo
                             total = total + rayColor;
@@ -635,19 +646,27 @@ int main() {
                     }
                 }
 
+                auto render_end = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> render_duration = render_end - render_start;
+                cout << "Renderizado completado en " << fixed << setprecision(2) 
+                     << render_duration.count() << " segundos" << endl;
+
                 auto end_time = std::chrono::high_resolution_clock::now();
                 auto end = std::chrono::system_clock::now();
                 std::time_t end_time_t = std::chrono::system_clock::to_time_t(end);
                 std::tm end_local_time = *std::localtime(&end_time_t);
-                cout << "Fin: " << std::put_time(&end_local_time, "%H:%M:%S") << endl;
+                cout << "\nFin: " << std::put_time(&end_local_time, "%H:%M:%S") << endl;
                 
-                // Calcular duración en segundos con precisión de 4 decimales
+                // Calcular duración total
                 std::chrono::duration<double> duration = end_time - start_time;
                 double elapsed_seconds = duration.count();
                 
                 cout << fixed << setprecision(4);
-                cout << "\nTiempo de generación: " << elapsed_seconds << " segundos" << endl;
+                cout << "Tiempo total: " << elapsed_seconds << " segundos" << endl;
+                cout << "  - Generación fotones: " << photon_duration.count() << " s" << endl;
+                cout << "  - Renderizado: " << render_duration.count() << " s" << endl;
 
+                // Guardar la imagen HDR y LDR
                 try {
                     saveHDRImage(image, filenameExr);
                     cout << "Imagen HDR guardada como: " << filenameExr << endl;

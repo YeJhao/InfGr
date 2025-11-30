@@ -170,7 +170,7 @@ inline void calculateProbabilities(const HitInfo& hit, double& pKill, double& pD
     double pdiff = (maxKd / s);
     double pspec = (maxKs / s);
     double ptrans = (maxKt / s);
-    double pKill = 1.0 - pdiff - pspec - ptrans;
+    pKill = 1.0 - pdiff - pspec - ptrans;
 
     // Normalización por si no matamos el camino del fotón
     double pContinue = 1.0 - pKill;
@@ -182,8 +182,9 @@ inline void calculateProbabilities(const HitInfo& hit, double& pKill, double& pD
 /**
  * Calcula la nueva dirección del rayo y el throughput según el lóbulo seleccionado
  */
-inline void calculateThroughput(const HitInfo& hit, const double pDiff, const double pSpec,
-                        const double rrValue, Direction& newRayDir, Color& throughput) {
+inline void calculateThroughput(const HitInfo& hit, const Ray& ray, const double pDiff, const double pSpec,
+                        const double rrValue, Direction& newRayDir, Color& throughput, 
+                        mt19937& gen, uniform_real_distribution<double>& dis) {
     if (rrValue < pDiff) {
         // ===== LÓBULO DIFUSO =====
         // Muestreo con distribución de coseno
@@ -242,7 +243,7 @@ inline void calculateThroughput(const HitInfo& hit, const double pDiff, const do
             newRayDir = wt;
         }
 
-        throughput = hit.kt / pTrans;
+        throughput = hit.kt / (1.0 - pDiff - pSpec);
     }
 }
 
@@ -320,7 +321,7 @@ inline Color pathTrace(const Ray& ray,
     // ============================================
     double rrValue = dis(gen);
     if (depth >= RR_MIN_DEPTH) {
-        if (rrValue < pkill){
+        if (rrValue < pKill){
             return L; // Terminar el path aquí
         }
     }
@@ -328,15 +329,11 @@ inline Color pathTrace(const Ray& ray,
     // Si no terminamos, procedemos a seleccionar el lóbulo y calcular el nuevo rayo
     // Generar nuevo valor aleatorio para seleccionar el lóbulo
     rrValue = dis(gen);
-
-    // Probabilidades acumuladas para selección de lóbulo
-    double pDiffuse = pDiff;
-    double pSpecular = pDiffuse + pSpec;
         
     Direction newRayDir;
     Color throughput; // Factor de transmisión de luz
 
-    calculateThroughput(hit, pDiff, pSpec, rrValue, newRayDir, throughput);
+    calculateThroughput(hit, ray, pDiff, pDiff + pSpec, rrValue, newRayDir, throughput, gen, dis);
     
     // Crear nuevo rayo
     Ray newRay(hit.point, newRayDir);

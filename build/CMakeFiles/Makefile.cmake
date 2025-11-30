@@ -69,5 +69,6 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/imaging_lib.dir/DependInfo.cmake"
   "CMakeFiles/light_lib.dir/DependInfo.cmake"
   "CMakeFiles/ray_lib.dir/DependInfo.cmake"
-  "CMakeFiles/generate_image.dir/DependInfo.cmake"
+  "CMakeFiles/generate_image_PT.dir/DependInfo.cmake"
+  "CMakeFiles/generate_image_PM.dir/DependInfo.cmake"
   )

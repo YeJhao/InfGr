@@ -1,16 +1,19 @@
 #ifndef PHOTON_MAPPING_HPP
 #define PHOTON_MAPPING_HPP
 
-#include "ray.hpp"
+#include "ray/ray.hpp"
 #include "kdTree/kdtree.h"
 #include "geometry/geometric_shape.hpp"
 #include "geometry/color.hpp"
-#include "geometry/point.hpp"
-#include "geometry/direction.hpp"
+#include "geometry/bsdf_utils.hpp"
+#include "light/point_light.hpp"
 #include "path_tracing.hpp"
 #include <vector>
 #include <cmath>
 #include <list>
+#include <array>
+#include <chrono>
+#include <iomanip>
 
 using namespace std;
 
@@ -32,8 +35,9 @@ class Photon {
         Direction direction_;   // Incident direction of the photon
         Color flux_;            // Flux (power) of the photon
 
-        float position(std::size_t i) const { return position_[i]; }
-};
+        float position(std::size_t i) const { 
+            return static_cast<float>(position_.coords(i)); 
+        }};
 
 struct PhotonAxisPositition {
     float operator()(const Photon& p, std::size_t i) const {
@@ -42,6 +46,20 @@ struct PhotonAxisPositition {
 };
 
 using PhotonMap = nn::KDTree<Photon,3,PhotonAxisPositition>;
+
+// Función auxiliar para convertir Point a std::array<float, 3>
+inline std::array<float, 3> pointToArray(const Point& p) {
+    return {static_cast<float>(p.coords(0)), 
+            static_cast<float>(p.coords(1)), 
+            static_cast<float>(p.coords(2))};
+}
+
+// Función auxiliar para convertir std::array a Point
+inline Point arrayToPoint(const std::array<float, 3>& arr) {
+    return Point(static_cast<double>(arr[0]), 
+                 static_cast<double>(arr[1]), 
+                 static_cast<double>(arr[2]));
+}
 
 inline bool isNonDeltaMaterial(const HitInfo& hit) {
     // Comprobar si el material tiene componente difusa (kd) o si no es completamente especular/refractiva
@@ -90,14 +108,13 @@ inline void recursive_trace_photon(const int depth,
     Direction newRayDir;
     Color throughput; // Factor de transmisión del fotón
 
-    calculateThroughput(hit, pDiff, pSpec, pTrans, dis0(gen), newRayDir, throughput);
+    calculateThroughput(hit, ray, pDiff, pDiff + pSpec, dis0(gen), newRayDir, throughput, gen, dis0);
 
     // Crear nuevo rayo
     Ray newRay(hit.point, newRayDir);
 
     // Calcular nuevo flujo del fotón
-    Color newFlux = Color();
-    newFlux = throughput * flux; // Lo que transmite el material * flujo entrante
+    Color newFlux = throughput * flux; // Lo que transmite el material * flujo entrante
 
     // Llamada recursiva
     recursive_trace_photon(depth + 1, newRay, newFlux, shapes, photon_list);
@@ -128,7 +145,14 @@ inline PhotonMap generate_photon_map(const int numRays,
     double doubleNumRays = static_cast<double>(numRays);
     double doubleLights = static_cast<double>(lights.size());
     double raysPerLight = doubleNumRays / doubleLights;
-    for (auto light: lights) {
+    
+    int totalPhotonsToGenerate = static_cast<int>(floor(raysPerLight)) * lights.size();
+    int photonsGenerated = 0;
+    int lastProgressPercent = 0;
+
+    cout << "Generando " << totalPhotonsToGenerate << " fotones desde " << lights.size() << " luz(ces)..." << endl;
+
+    for (const auto& light: lights) {
         Color initialFlux = light->intensity * 4.0 * M_PI / raysPerLight;
         for (int i = 0; i < floor(raysPerLight); ++i) {
             // Lanzar dirección aleatoria desde la luz 
@@ -140,8 +164,27 @@ inline PhotonMap generate_photon_map(const int numRays,
             // - Flujo igual a la intensidad de la luz
             // - Geometrías de la escena
             recursive_trace_photon(0, ray, initialFlux, shapes, photons);
+            
+            // Actualizar progreso
+            photonsGenerated++;
+            int currentProgress = (photonsGenerated * 100) / totalPhotonsToGenerate;
+            
+            // Mostrar progreso cada 10%
+            if (currentProgress >= lastProgressPercent + 10) {
+                lastProgressPercent = currentProgress;
+                
+                auto now = std::chrono::system_clock::now();
+                std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+                std::tm local_time = *std::localtime(&now_time);
+                
+                cout << "  Progreso fotones: " << currentProgress << "% (" 
+                     << photonsGenerated << "/" << totalPhotonsToGenerate << ") - "
+                     << std::put_time(&local_time, "%H:%M:%S") << endl;
+            }
         }
     }
+    cout << "Total de fotones almacenados en el mapa: " << photons.size() << endl;
+
     // Crear el mapa de fotones con la lista de fotones generada
     PhotonMap photon_map(photons, PhotonAxisPositition());
 
@@ -205,11 +248,11 @@ inline Color photonMap(const Ray& ray,
     double pKill, pDiff, pSpec, pTrans;
     calculateProbabilities(hit, pKill, pDiff, pSpec, pTrans);
 
-    // Solo calculada cuando el material es no delta (difuso)
+    // Solo calculada cuando el material es no delta (tiene valores != 0 en la componente difusa)
+    Color indirectLight(0, 0, 0);
     if (isNonDeltaMaterial(hit)) {
-        vector<const Photon*> nearestPhotons = photon_map.nearest_neighbors(hit.point, k);
-
-        Color indirectLight(0, 0, 0);
+        array<float, 3> queryPoint = pointToArray(hit.point);
+        vector<const Photon*> nearestPhotons = photon_map.nearest_neighbors(queryPoint, k);
 
         // Calculamos el radio máximo entre los k fotones más cercanos
         float maxDist = 0.0f;
@@ -230,7 +273,7 @@ inline Color photonMap(const Ray& ray,
         }
 
     } else {
-        double rrValue = dis(gen);
+        double rrValue = dis0(gen);
         if (rrValue < pSpec) {
             // ===== LÓBULO ESPECULAR (Reflexión perfecta) =====
             Direction wo = ray.d * (-1.0); // Dirección hacia afuera (opuesta al rayo incidente)
@@ -242,7 +285,7 @@ inline Color photonMap(const Ray& ray,
         } else {
             // ===== LÓBULO DE TRANSMISIÓN (Refracción) =====
             Direction wo = ray.d * (-1.0); // Dirección hacia afuera
-            
+            Direction newRayDir;
             // Determinar si estamos entrando o saliendo del objeto
             // Si n·wo > 0, el rayo viene del exterior (entrando)
             // Si n·wo < 0, el rayo viene del interior (saliendo)
