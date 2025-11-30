@@ -20,6 +20,8 @@ using namespace std;
 // Variables de configuración
 #define PHOTON_MIN_DEPTH 2
 
+const iluminacionDirecta = 1;
+
 // Variables globales
 //uniform_real_distribution<double> dis0 = uniform_real_distribution<double>(0.0, 1.0);
 //uniform_real_distribution<double> dis1 = uniform_real_distribution<double>(-1.0, 1.0);
@@ -191,12 +193,48 @@ inline PhotonMap generate_photon_map(const int numRays,
     return photon_map;
 }
 
+inline Color nextEventEstimation(const HitInfo& hit,
+                                 const vector<unique_ptr<PointLight>>& lights,
+                                 const vector<unique_ptr<GeometricShape>>& shapes) 
+{
+    Color L(0, 0, 0);                                
+    for (const auto& light : lights) {
+        // Comprobar visibilidad con shadow ray
+        if (isVisible(hit.point, light->position, shapes)) {
+            Direction wi = (light->position - hit.point);
+            double distToLight = wi.norm();
+            wi = wi / distToLight; // Normalizar
+            
+            // Atenuación por distancia
+            Color Li = light->intensity / (distToLight * distToLight);
+            
+            // BRDF difusa (solo difusa para iluminación directa)
+            Color fr = hit.kd * (1.0 / M_PI);
+
+            // Factor geométrico
+            double cosTheta = max(0.0, hit.normal.dot(wi));
+            
+            // Contribución de esta luz
+            L = L + (Li * fr * cosTheta);
+        }
+    }
+    return L;
+}
+
+inline Color firstBouncePhotonEstimation(const HitInfo& hit,
+                                         const PhotonMap& photon_map
+                                         ) 
+{
+
+}
+
 inline Color photonMap(const Ray& ray, 
                        const vector<unique_ptr<GeometricShape>>& shapes,
                        const vector<unique_ptr<PointLight>>& lights,
                        int depth,
                        const PhotonMap& photon_map,
-                       const int k = 50) {
+                       const int k = 50) 
+{
     // Límite de seguridad (por si acaso)
     if (depth >= MAX_BOUNCES) {
         return Color(0, 0, 0);
@@ -221,25 +259,16 @@ inline Color photonMap(const Ray& ray,
     // ============================================
     // 1. ILUMINACIÓN DIRECTA (Direct Lighting)
     // ============================================
-    for (const auto& light : lights) {
-        // Comprobar visibilidad con shadow ray
-        if (isVisible(hit.point, light->position, shapes)) {
-            Direction wi = (light->position - hit.point);
-            double distToLight = wi.norm();
-            wi = wi / distToLight; // Normalizar
-            
-            // Atenuación por distancia
-            Color Li = light->intensity / (distToLight * distToLight);
-            
-            // BRDF difusa (solo difusa para iluminación directa)
-            Color fr = hit.kd * (1.0 / M_PI);
-
-            // Factor geométrico
-            double cosTheta = max(0.0, hit.normal.dot(wi));
-            
-            // Contribución de esta luz
-            L = L + (Li * fr * cosTheta);
-        }
+    switch (iluminacionDirecta) {
+        case 1: // Next-event estimation
+            L = nextEventEstimation(hit, lights, shapes);
+            break;
+        case 2: // Utilizando los fotones del primer rebote
+            L = firstBouncePhotonEstimation(hit, photon_map, k);
+            break;
+        default:
+            // No hacer nada
+            break;
     }
 
     // ============================================
@@ -267,7 +296,7 @@ inline Color photonMap(const Ray& ray,
         // BRDF difusa
         Color fr = hit.kd / (M_PI * pDiff);
 
-        for (const Photon* photon : nearestPhotons) {            
+        for (const Photon* photon: nearestPhotons) {            
             // Contribución += BSDF * flujo del fotón / área
             indirectLight = indirectLight + (fr * photon->flux_ / area);
         }
@@ -280,7 +309,7 @@ inline Color photonMap(const Ray& ray,
             Direction newRayDir = perfectReflection(wo, hit.normal);
 
             Ray newRay(hit.point, newRayDir);
-            return L + (photonMap(newRay, shapes, lights, depth + 1, photon_map, k) / pSpec);
+            indirectLight = indirectLight + (photonMap(newRay, shapes, lights, depth + 1, photon_map, k) / pSpec);
 
         } else {
             // ===== LÓBULO DE TRANSMISIÓN (Refracción) =====
@@ -322,7 +351,7 @@ inline Color photonMap(const Ray& ray,
 
             Ray newRay(hit.point, newRayDir);
 
-            return L + (photonMap(newRay, shapes, lights, depth + 1, photon_map, k) / pTrans);
+            indirectLight = indirectLight + (photonMap(newRay, shapes, lights, depth + 1, photon_map, k) / pTrans);
         }
     }
     
