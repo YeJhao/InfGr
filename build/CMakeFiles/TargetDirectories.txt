@@ -2,6 +2,7 @@
 /home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/imaging_lib.dir
 /home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/light_lib.dir
 /home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/ray_lib.dir
-/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/generate_image.dir
+/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/generate_image_PT.dir
+/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/generate_image_PM.dir
 /home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/edit_cache.dir
 /home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles/rebuild_cache.dir

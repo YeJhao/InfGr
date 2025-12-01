@@ -169,41 +169,78 @@ ray_lib/fast:
 .PHONY : ray_lib/fast
 
 #=============================================================================
-# Target rules for targets named generate_image
+# Target rules for targets named generate_image_PT
 
 # Build rule for target.
-generate_image: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 generate_image
-.PHONY : generate_image
+generate_image_PT: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 generate_image_PT
+.PHONY : generate_image_PT
 
 # fast build rule for target.
-generate_image/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/build
-.PHONY : generate_image/fast
+generate_image_PT/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PT.dir/build.make CMakeFiles/generate_image_PT.dir/build
+.PHONY : generate_image_PT/fast
 
-generate_image.o: generate_image.cpp.o
-.PHONY : generate_image.o
+#=============================================================================
+# Target rules for targets named generate_image_PM
+
+# Build rule for target.
+generate_image_PM: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 generate_image_PM
+.PHONY : generate_image_PM
+
+# fast build rule for target.
+generate_image_PM/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PM.dir/build.make CMakeFiles/generate_image_PM.dir/build
+.PHONY : generate_image_PM/fast
+
+generate_image_PM.o: generate_image_PM.cpp.o
+.PHONY : generate_image_PM.o
 
 # target to build an object file
-generate_image.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/generate_image.cpp.o
-.PHONY : generate_image.cpp.o
+generate_image_PM.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PM.dir/build.make CMakeFiles/generate_image_PM.dir/generate_image_PM.cpp.o
+.PHONY : generate_image_PM.cpp.o
 
-generate_image.i: generate_image.cpp.i
-.PHONY : generate_image.i
+generate_image_PM.i: generate_image_PM.cpp.i
+.PHONY : generate_image_PM.i
 
 # target to preprocess a source file
-generate_image.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/generate_image.cpp.i
-.PHONY : generate_image.cpp.i
+generate_image_PM.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PM.dir/build.make CMakeFiles/generate_image_PM.dir/generate_image_PM.cpp.i
+.PHONY : generate_image_PM.cpp.i
 
-generate_image.s: generate_image.cpp.s
-.PHONY : generate_image.s
+generate_image_PM.s: generate_image_PM.cpp.s
+.PHONY : generate_image_PM.s
 
 # target to generate assembly for a file
-generate_image.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image.dir/build.make CMakeFiles/generate_image.dir/generate_image.cpp.s
-.PHONY : generate_image.cpp.s
+generate_image_PM.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PM.dir/build.make CMakeFiles/generate_image_PM.dir/generate_image_PM.cpp.s
+.PHONY : generate_image_PM.cpp.s
+
+generate_image_PT.o: generate_image_PT.cpp.o
+.PHONY : generate_image_PT.o
+
+# target to build an object file
+generate_image_PT.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PT.dir/build.make CMakeFiles/generate_image_PT.dir/generate_image_PT.cpp.o
+.PHONY : generate_image_PT.cpp.o
+
+generate_image_PT.i: generate_image_PT.cpp.i
+.PHONY : generate_image_PT.i
+
+# target to preprocess a source file
+generate_image_PT.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PT.dir/build.make CMakeFiles/generate_image_PT.dir/generate_image_PT.cpp.i
+.PHONY : generate_image_PT.cpp.i
+
+generate_image_PT.s: generate_image_PT.cpp.s
+.PHONY : generate_image_PT.s
+
+# target to generate assembly for a file
+generate_image_PT.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PT.dir/build.make CMakeFiles/generate_image_PT.dir/generate_image_PT.cpp.s
+.PHONY : generate_image_PT.cpp.s
 
 geometry/color.o: geometry/color.cpp.o
 .PHONY : geometry/color.o
@@ -405,14 +442,18 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... generate_image"
+	@echo "... generate_image_PM"
+	@echo "... generate_image_PT"
 	@echo "... geometry_lib"
 	@echo "... imaging_lib"
 	@echo "... light_lib"
 	@echo "... ray_lib"
-	@echo "... generate_image.o"
-	@echo "... generate_image.i"
-	@echo "... generate_image.s"
+	@echo "... generate_image_PM.o"
+	@echo "... generate_image_PM.i"
+	@echo "... generate_image_PM.s"
+	@echo "... generate_image_PT.o"
+	@echo "... generate_image_PT.i"
+	@echo "... generate_image_PT.s"
 	@echo "... geometry/color.o"
 	@echo "... geometry/color.i"
 	@echo "... geometry/color.s"

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(PhotonMapping)
+project(RayTracing)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -80,17 +80,41 @@ target_include_directories(ray_lib PUBLIC
 
 target_link_libraries(ray_lib geometry_lib)
 
-# Ejecutable principal: generate_image
-add_executable(generate_image
-    generate_image.cpp
+# ============================================
+# Ejecutable 1: Path Tracing
+# ============================================
+add_executable(generate_image_PT
+    generate_image_PT.cpp
 )
 
-target_include_directories(generate_image PRIVATE 
+target_include_directories(generate_image_PT PRIVATE 
     ${CMAKE_SOURCE_DIR}
     ${EIGEN3_INCLUDE_DIR}
 )
 
-target_link_libraries(generate_image
+target_link_libraries(generate_image_PT
+    geometry_lib
+    imaging_lib
+    light_lib
+    ray_lib
+    OpenEXR::OpenEXR
+    PNG::PNG
+)
+
+# ============================================
+# Ejecutable 2: Photon Mapping
+# ============================================
+add_executable(generate_image_PM
+    generate_image_PM.cpp
+)
+
+target_include_directories(generate_image_PM PRIVATE 
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/kdTree
+    ${EIGEN3_INCLUDE_DIR}
+)
+
+target_link_libraries(generate_image_PM
     geometry_lib
     imaging_lib
     light_lib
@@ -102,10 +126,17 @@ target_link_libraries(generate_image
 # En Windows, copiar DLLs necesarias al directorio de ejecutables
 if(WIN32)
     # OpenEXR y PNG suelen necesitar DLLs en runtime
-    add_custom_command(TARGET generate_image POST_BUILD
+    add_custom_command(TARGET generate_image_PT POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_RUNTIME_DLLS:generate_image>
-        $<TARGET_FILE_DIR:generate_image>
+        $<TARGET_RUNTIME_DLLS:generate_image_PT>
+        $<TARGET_FILE_DIR:generate_image_PT>
+        COMMAND_EXPAND_LISTS
+    )
+    
+    add_custom_command(TARGET generate_image_PM POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_RUNTIME_DLLS:generate_image_PM>
+        $<TARGET_FILE_DIR:generate_image_PM>
         COMMAND_EXPAND_LISTS
     )
 endif()
