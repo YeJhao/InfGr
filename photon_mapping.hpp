@@ -59,7 +59,9 @@ inline void recursive_trace_photon(const int depth,
             // Guardar fotón en el mapa de fotones
             Photon photon;
             photon.position_ = hit.point;     
-            photon.direction_ = ray.d; // Dirección incidente       
+            photon.direction_ = ray.d; // Dirección incidente
+            // Añadir flujo del fotón
+            photon_list.push_back(photon);
         }
     } else {
         // Si no hay intersección, terminar

@@ -42,6 +42,43 @@ class PathTracerConvergenceAnalyzer:
                 'description': 'Cornell Box - Esfera plástica y dieléctrica'
             }
         }
+
+        self.scenes_AL = {
+            'cb_AL_basic': {
+                'files': {
+                    2: 'cb_areaL_2.exr',
+                    8: 'cb_areaL_8.exr',
+                    32: 'cb_areaL_32.exr',
+                    128: 'cb_areaL_128.exr',
+                    512: 'cb_areaL_512.exr'
+                },
+                'times': {
+                    2: 13.9725,
+                    8: 59.4028,
+                    32: 215.9332,
+                    128: 1844.2651,
+                    512: 3090.7401
+                },
+                'description': 'Cornell Box - Esferas difusas, con luz de área'
+            },
+            'cb_AL_e2': {
+                'files': {
+                    2: 'cb_areaL_e2_2.exr',
+                    8: 'cb_areaL_e2_8.exr',
+                    32: 'cb_areaL_e2_32.exr',
+                    128: 'cb_areaL_e2_128.exr',
+                    512: 'cb_areaL_e2_512.exr'
+                },
+                'times': {
+                    2: 10.1769,
+                    8: 54.2094,
+                    32: 205.8907,
+                    128: 889.3608,
+                    512: 3508.8919
+                },
+                'description': 'Cornell Box - Esfera plástica y dieléctrica, con luz de área'
+            }
+        }
         
         self.base_path = Path('images_guion_p1')
         
@@ -312,8 +349,44 @@ class PathTracerConvergenceAnalyzer:
         print("="*70)
         
         return all_results
+    
+    def time_analysis(self):
+        """Genera gráficas sencillas comparando tiempos entre escenas con y sin luz de área."""
+        samples = list(self.scenes['cb_basic']['times'].keys())
 
+        times_basic = list(self.scenes['cb_basic']['times'].values())
+        times_AL_basic = list(self.scenes_AL['cb_AL_basic']['times'].values())
+
+        # Primera gráfica con esferas difusas
+        plt.figure(figsize=(14, 10))
+        plt.plot(samples, times_basic, marker='o', label='cb_basic')
+        plt.plot(samples, times_AL_basic, marker='o', label='cb_AL_basic')
+        plt.title('Comparación de tiempos: cb_basic vs cb_AL_basic')
+        plt.xlabel('Samples per Pixel (SPP)')
+        plt.ylabel('Tiempo (s)')
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(self.base_path / f'time_cb_basic.png', dpi=300)
+        plt.close()
+
+        # Segunda gráfica con esfera plástica y dieléctrica
+        times_e2 = list(self.scenes['cb_e2']['times'].values())
+        times_AL_e2 = list(self.scenes_AL['cb_AL_e2']['times'].values())
+
+        plt.figure(figsize=(10,5))
+        plt.plot(samples, times_e2, marker='o', label='cb_e2')
+        plt.plot(samples, times_AL_e2, marker='o', label='cb_AL_e2')
+        plt.title('Comparación de tiempos: cb_e2 vs cb_AL_e2')
+        plt.xlabel('Samples per Pixel (SPP)')
+        plt.ylabel('Tiempo (s)')
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(self.base_path / f'time_cb_e2.png', dpi=300)
+        plt.close()
 
 if __name__ == "__main__":
     analyzer = PathTracerConvergenceAnalyzer()
+    #analyzer.time_analysis()   # Descomentar para generar gráficas de comparación de tiempo
     results = analyzer.run_full_analysis()

@@ -346,6 +346,37 @@ void cb_plastic_dielectric(vector<unique_ptr<GeometricShape>>& shapes, vector<un
     lights.push_back(make_unique<PointLight>(light));
 }
 
+// Cornell box con luz de área y esfera izquierda plastica y derecha dieléctrica
+void cb_top_AL_plastic_dielectric(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights){
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    // Esferas dieléctricas
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0,0,0), Color(0.65, 0.45, 0.75), Color(0.15, 0.15, 0.15), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaIzquierda));
+
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0,0,0), Color(0,0,0), Color(0.02, 0.02, 0.02), Color(0.98, 0.98, 0.98), 1.5);
+    shapes.push_back(make_unique<Sphere>(esferaDerecha));
+
+    
+    // LUZ ÁREA
+    Plane areaLight(Direction(0, -1, 0), 1, Color(0.9, 0.9, 0.9), Color(0,0,0), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(areaLight));
+}
+
 // Cornell box para color bleeding
 void color_bleeding_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
     shapes.clear();
@@ -404,10 +435,11 @@ int main() {
         cout << "7.  Paredes especulares" << endl;
         cout << "8.  Esferas dieléctricas" << endl;
         cout << "9.  Esferas plástica y dieléctrica" << endl;
-        cout << "10. Color Bleeding" << endl;
-        cout << "11. Sombras duras" << endl;
-        cout << "12. Sombras suaves" << endl;
-        cout << "13. Caústicas" << endl;
+        cout << "10. Esferas plástica y dieléctrica, con luz de área" << endl;
+        cout << "11. Color Bleeding" << endl;
+        cout << "12. Sombras duras" << endl;
+        cout << "13. Sombras suaves" << endl;
+        cout << "14. Caústicas" << endl;
         cout << "\n22. Generar imagen" << endl;
         cout << "0. Salir" << endl;
         cout << "Selecciona una opción: ";
@@ -477,8 +509,15 @@ int main() {
 
             case 10: {
                 if (current_scene == 10) break;
-                color_bleeding_scene(shapes, lights);
+                cb_top_AL_plastic_dielectric(shapes, lights);
                 current_scene = 10;
+                break;
+            }
+
+            case 11: {
+                if (current_scene == 11) break;
+                color_bleeding_scene(shapes, lights);
+                current_scene = 11;
                 break;
             }
 
