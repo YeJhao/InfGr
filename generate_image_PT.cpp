@@ -24,6 +24,7 @@
 #include <random>
 #include <chrono>
 #include <iomanip>
+#include <omp.h>
 
 using namespace std;
 
@@ -408,6 +409,94 @@ void color_bleeding_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<uni
     //lights.push_back(make_unique<PointLight>(light));
 }
 
+// Cornell Box básica con luz puntual arriba y una esfera, donde se percibe sombras duras
+void hard_shadow_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    Plane planoArriba(Direction(0, -1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoArriba));
+
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    Sphere esfera(Point(0, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.8, 0.6, 0.9), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esfera));
+
+
+    // LUZ PUNTUAL
+    PointLight light(Point(0, 0.5, 0), Color(1, 1, 1));
+    lights.push_back(make_unique<PointLight>(light));
+}
+
+// Cornell Box básica con luz puntual arriba y una esfera, donde se percibe sombras suaves
+void soft_shadow_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    Sphere esfera(Point(0, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.8, 0.6, 0.9), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esfera));
+
+
+    // LUZ ÁREA
+    Plane areaLight(Direction(0, -1, 0), 1, Color(0.9, 0.9, 0.9), Color(0,0,0), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(areaLight));
+}
+
+// Cornell box con luz puntual y esfera dieléctrica, para ver caústicas
+void caustics_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights){
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    Plane planoArriba(Direction(0, -1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoArriba));
+
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    // Esferas dieléctricas
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0,0,0), Color(0,0,0), Color(0.02, 0.02, 0.02), Color(0.98, 0.98, 0.98), 1.5);
+    shapes.push_back(make_unique<Sphere>(esferaDerecha));
+
+
+    // LUZ PUNTUAL
+    PointLight light(Point(0, 0.5, 0), Color(1, 1, 1));
+    lights.push_back(make_unique<PointLight>(light));
+}
+
 
 int main() {
     cout << "Tamaño de la imagen (anchura altura): ";
@@ -521,6 +610,27 @@ int main() {
                 break;
             }
 
+            case 12: {
+                if (current_scene == 11) break;
+                hard_shadow_scene(shapes, lights);
+                current_scene = 12;
+                break;
+            }
+
+            case 13: {
+                if (current_scene == 11) break;
+                soft_shadow_scene(shapes, lights);
+                current_scene = 12;
+                break;
+            }
+
+            case 14: {
+                if (current_scene == 14) break;
+                caustics_scene(shapes, lights);
+                current_scene = 14;
+                break;
+            }
+
             // Generar imagen con cámara configurable
             case 22: {
                 if (shapes.empty()) {
@@ -571,68 +681,77 @@ int main() {
                 
                 // Generador de números aleatorios
                 random_device rd;
-                mt19937 gen(rd());
-                uniform_real_distribution<double> dis(0.0, 1.0);
+                atomic<int> filasProcesadas = 0;
 
                 // Para cada píxel
-                for (int i = 0; i < pixelHeight; ++i) {
-                    for (int j = 0; j < pixelWidth; ++j) {
-                        // Calcular los límites del píxel en coordenadas del mundo
-                        double pixelSizeX = 2.0 / pixelWidth;   // Tamaño de un píxel en X
-                        double pixelSizeY = 2.0 / pixelHeight; // Tamaño de un píxel en Y
-                        
-                        // Esquina inferior-izquierda del píxel en coordenadas de cámara
-                        double pixelMaxX = 1.0 - j * pixelSizeX;
-                        double pixelMinX = pixelMaxX - pixelSizeX;
-                        double pixelMaxY = 1.0 - i * pixelSizeY;
-                        double pixelMinY = pixelMaxY - pixelSizeY;
-                        
-                        // Acumuladores para el color
-                        Color total(0, 0, 0);
+                #pragma omp parallel
+                {
+                    // De momento determinista (TODO: pensar en inclusión de rd())
+                    mt19937 gen(1234 + omp_get_thread_num()); // Semilla diferente por hilo
+                    uniform_real_distribution<double> dis(0.0, 1.0);
 
-                        // Lanzar múltiples rayos por píxel (Monte Carlo)
-                        for (int ray_sample = 0; ray_sample < raysPerPixel; ++ray_sample) {
-                            // Generar coordenadas aleatorias dentro del píxel en coordenadas de cámara
-                            double x = pixelMinX + dis(gen) * pixelSizeX;
-                            double y = pixelMinY + dis(gen) * pixelSizeY;
-                            double z = 1; // Plano de imagen en z=1 en coordenadas de cámara
+                    #pragma omp for schedule(dynamic)
+                    for (int i = 0; i < pixelHeight; ++i) {
+                        for (int j = 0; j < pixelWidth; ++j) {
+                            // Calcular los límites del píxel en coordenadas del mundo
+                            double pixelSizeX = 2.0 / pixelWidth;   // Tamaño de un píxel en X
+                            double pixelSizeY = 2.0 / pixelHeight; // Tamaño de un píxel en Y
                             
-                            // Convertir punto del plano de imagen de coordenadas de cámara a mundo
-                            Point cameraPixelPoint(x, y, z);
-                            Point cameraLocalOrigin = Point(0,0,0);
-                            Direction cameraDirection = cameraPixelPoint - cameraLocalOrigin;
-                            Direction rayDirection = camera.cameraToWorld(cameraDirection);
+                            // Esquina inferior-izquierda del píxel en coordenadas de cámara
+                            double pixelMaxX = 1.0 - j * pixelSizeX;
+                            double pixelMinX = pixelMaxX - pixelSizeX;
+                            double pixelMaxY = 1.0 - i * pixelSizeY;
+                            double pixelMinY = pixelMaxY - pixelSizeY;
                             
-                            // Crear el rayo desde el origen de la cámara hacia el punto del píxel
-                            Ray ray(camera.origin, rayDirection.normalized());
+                            // Acumuladores para el color
+                            Color total(0, 0, 0);
+
+                            // Lanzar múltiples rayos por píxel (Monte Carlo)
+                            for (int ray_sample = 0; ray_sample < raysPerPixel; ++ray_sample) {
+                                // Generar coordenadas aleatorias dentro del píxel en coordenadas de cámara
+                                double x = pixelMinX + dis(gen) * pixelSizeX;
+                                double y = pixelMinY + dis(gen) * pixelSizeY;
+                                double z = 1; // Plano de imagen en z=1 en coordenadas de cámara
+                                
+                                // Convertir punto del plano de imagen de coordenadas de cámara a mundo
+                                Point cameraPixelPoint(x, y, z);
+                                Point cameraLocalOrigin = Point(0,0,0);
+                                Direction cameraDirection = cameraPixelPoint - cameraLocalOrigin;
+                                Direction rayDirection = camera.cameraToWorld(cameraDirection);
+                                
+                                // Crear el rayo desde el origen de la cámara hacia el punto del píxel
+                                Ray ray(camera.origin, rayDirection.normalized());
+                                
+                                // Trazar el rayo con path tracing recursivo
+                                Color rayColor = pathTrace(ray, shapes, lights, gen, dis, 0);
+                                
+                                // Acumular el color de este rayo
+                                total = total + rayColor;
+                            }
                             
-                            // Trazar el rayo con path tracing recursivo
-                            Color rayColor = pathTrace(ray, shapes, lights, gen, dis, 0);
-                            
-                            // Acumular el color de este rayo
-                            total = total + rayColor;
+                            // Promediar los colores de todos los rayos
+                            Color avg = total / static_cast<double>(raysPerPixel);
+
+                            // Asignar el color promedio al píxel
+                            image.imagen[i][j] = PixelRGB(avg.r, avg.g, avg.b);
                         }
                         
-                        // Promediar los colores de todos los rayos
-                        Color avg = total / static_cast<double>(raysPerPixel);
+                        // Un hilo muestra progreso cada 10% de las filas
+                        int f = ++filasProcesadas;       // atómico, seguro
+                        if (f % (pixelHeight / 10) == 0 || f == pixelHeight - 1) {
+                            #pragma omp critical
+                            {
+                                // Obtener la hora actual
+                                auto now = std::chrono::system_clock::now();
 
-                        // Asignar el color promedio al píxel
-                        image.imagen[i][j] = PixelRGB(avg.r, avg.g, avg.b);
-                    }
-                    
-                    // Mostrar progreso cada 10% de las filas
-                    if ((i + 1) % (pixelHeight / 10) == 0 || i == pixelHeight - 1) {
-                        int progress = ((i + 1) * 100) / pixelHeight;
-                        
-                        // Obtener la hora actual
-                        auto now = std::chrono::system_clock::now();
+                                std::time_t now_time = std::chrono::system_clock::to_time_t(now);
 
-                        std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+                                std::tm local_time = *std::localtime(&now_time);
 
-                        std::tm local_time = *std::localtime(&now_time);
-
-                        cout << "Progreso: " << progress << "% (" << (i + 1) << "/" << pixelHeight << " filas) - "
-                             << std::put_time(&local_time, "%H:%M:%S") << endl;
+                                cout << "Progreso: " << (f * 100) / pixelHeight << "% (" << f << "/" << pixelHeight << " filas) - "
+                                    << std::put_time(&local_time, "%H:%M:%S") << endl;
+                            }
+                        }
                     }
                 }
 

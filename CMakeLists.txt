@@ -25,6 +25,7 @@ endif()
 find_package(OpenEXR REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(PNG REQUIRED)
+find_package(OpenMP REQUIRED)
 
 # Directorio de ejecutables
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/executables)
@@ -99,6 +100,7 @@ target_link_libraries(generate_image_PT
     ray_lib
     OpenEXR::OpenEXR
     PNG::PNG
+    OpenMP::OpenMP_CXX
 )
 
 # ============================================

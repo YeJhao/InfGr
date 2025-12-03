@@ -20,7 +20,7 @@ using namespace std;
 // Variables de configuración
 #define PHOTON_MIN_DEPTH 2
 
-const iluminacionDirecta = 1;
+const int iluminacionDirecta = 1;
 
 // Variables globales
 //uniform_real_distribution<double> dis0 = uniform_real_distribution<double>(0.0, 1.0);
@@ -264,7 +264,7 @@ inline Color photonMap(const Ray& ray,
             L = nextEventEstimation(hit, lights, shapes);
             break;
         case 2: // Utilizando los fotones del primer rebote
-            L = firstBouncePhotonEstimation(hit, photon_map, k);
+            L = firstBouncePhotonEstimation(hit, photon_map);
             break;
         default:
             // No hacer nada
