@@ -82,34 +82,34 @@ target_include_directories(ray_lib PUBLIC
 target_link_libraries(ray_lib geometry_lib)
 
 # ============================================
-# Ejecutable: Photon Mapping
+# Ejecutable 1: Path Tracing
 # ============================================
-add_executable(generate_image_PM
-    generate_image_PM.cpp
+add_executable(generate_image_PT
+    generate_image_PT.cpp
 )
 
-target_include_directories(generate_image_PM PRIVATE 
+target_include_directories(generate_image_PT PRIVATE 
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/kdTree
     ${EIGEN3_INCLUDE_DIR}
 )
 
-target_link_libraries(generate_image_PM
+target_link_libraries(generate_image_PT
     geometry_lib
     imaging_lib
     light_lib
     ray_lib
     OpenEXR::OpenEXR
     PNG::PNG
+    OpenMP::OpenMP_CXX
 )
 
 # En Windows, copiar DLLs necesarias al directorio de ejecutables
 if(WIN32)
-    # OpenEXR y PNG suelen necesitar DLLs en runtime    
-    add_custom_command(TARGET generate_image_PM POST_BUILD
+    # OpenEXR y PNG suelen necesitar DLLs en runtime
+    add_custom_command(TARGET generate_image_PT POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_RUNTIME_DLLS:generate_image_PM>
-        $<TARGET_FILE_DIR:generate_image_PM>
+        $<TARGET_RUNTIME_DLLS:generate_image_PT>
+        $<TARGET_FILE_DIR:generate_image_PT>
         COMMAND_EXPAND_LISTS
     )
 endif()

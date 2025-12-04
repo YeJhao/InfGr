@@ -169,19 +169,6 @@ ray_lib/fast:
 .PHONY : ray_lib/fast
 
 #=============================================================================
-# Target rules for targets named generate_image_PT
-
-# Build rule for target.
-generate_image_PT: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 generate_image_PT
-.PHONY : generate_image_PT
-
-# fast build rule for target.
-generate_image_PT/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PT.dir/build.make CMakeFiles/generate_image_PT.dir/build
-.PHONY : generate_image_PT/fast
-
-#=============================================================================
 # Target rules for targets named generate_image_PM
 
 # Build rule for target.
@@ -217,30 +204,6 @@ generate_image_PM.s: generate_image_PM.cpp.s
 generate_image_PM.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PM.dir/build.make CMakeFiles/generate_image_PM.dir/generate_image_PM.cpp.s
 .PHONY : generate_image_PM.cpp.s
-
-generate_image_PT.o: generate_image_PT.cpp.o
-.PHONY : generate_image_PT.o
-
-# target to build an object file
-generate_image_PT.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PT.dir/build.make CMakeFiles/generate_image_PT.dir/generate_image_PT.cpp.o
-.PHONY : generate_image_PT.cpp.o
-
-generate_image_PT.i: generate_image_PT.cpp.i
-.PHONY : generate_image_PT.i
-
-# target to preprocess a source file
-generate_image_PT.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PT.dir/build.make CMakeFiles/generate_image_PT.dir/generate_image_PT.cpp.i
-.PHONY : generate_image_PT.cpp.i
-
-generate_image_PT.s: generate_image_PT.cpp.s
-.PHONY : generate_image_PT.s
-
-# target to generate assembly for a file
-generate_image_PT.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PT.dir/build.make CMakeFiles/generate_image_PT.dir/generate_image_PT.cpp.s
-.PHONY : generate_image_PT.cpp.s
 
 geometry/color.o: geometry/color.cpp.o
 .PHONY : geometry/color.o
@@ -443,7 +406,6 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... generate_image_PM"
-	@echo "... generate_image_PT"
 	@echo "... geometry_lib"
 	@echo "... imaging_lib"
 	@echo "... light_lib"
@@ -451,9 +413,6 @@ help:
 	@echo "... generate_image_PM.o"
 	@echo "... generate_image_PM.i"
 	@echo "... generate_image_PM.s"
-	@echo "... generate_image_PT.o"
-	@echo "... generate_image_PT.i"
-	@echo "... generate_image_PT.s"
 	@echo "... geometry/color.o"
 	@echo "... geometry/color.i"
 	@echo "... geometry/color.s"
