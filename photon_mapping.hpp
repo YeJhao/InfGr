@@ -20,12 +20,9 @@ using namespace std;
 // Variables de configuración
 #define PHOTON_MIN_DEPTH 2
 
-const int iluminacionDirecta = 1;
+const bool useNEE = true; // Usar Next Event Estimation
 
 // Variables globales
-//uniform_real_distribution<double> dis0 = uniform_real_distribution<double>(0.0, 1.0);
-//uniform_real_distribution<double> dis1 = uniform_real_distribution<double>(-1.0, 1.0);
-//gen = mt19937(random_device{}());
 mt19937 gen(random_device{}());
 uniform_real_distribution<double> dis0(0.0, 1.0);
 uniform_real_distribution<double> dis1(-1.0, 1.0);
@@ -33,9 +30,9 @@ uniform_real_distribution<double> dis1(-1.0, 1.0);
 
 class Photon {
     public:
-        Point position_;        // 3D point of the interaction
-        Direction direction_;   // Incident direction of the photon
-        Color flux_;            // Flux (power) of the photon
+        Point position_;        // Punto de la intersección del fotón
+        Direction direction_;   // Dirección incidente del fotón
+        Color flux_;            // Flujo (potencia) del fotón
 
         float position(std::size_t i) const { 
             return static_cast<float>(position_.coords(i)); 
@@ -70,23 +67,25 @@ inline bool isNonDeltaMaterial(const HitInfo& hit) {
 
 inline void recursive_trace_photon(const int depth, 
                         const Ray& ray,
-                        const Color& flux,
                         const vector<unique_ptr<GeometricShape>>& shapes,
-                        list<Photon>& photon_list
+                        const Color& flux,
+                        list<Photon>& photon_list,
+                        const int maxPhotonsPerLight
                         ){
-
     // Encontrar intersección más cercana con la geometría
     HitInfo hit = findClosestIntersection(ray, shapes, ray.o);
 
     // Comprobar si la intersección es con geometría NO delta (especular/refractiva)
     // Entonces, guardar el fotón en el mapa de fotones
     if (hit.hit) {
-        if (isNonDeltaMaterial(hit)) {
+        if (useNEE && depth == 0) { 
+            // Si utilizamos NEE y es el primer rebote, no guardamos el fotón
+        } else if (isNonDeltaMaterial(hit)) {
             // Guardar fotón en el mapa de fotones
             Photon photon;
-            photon.flux_ = flux;
             photon.position_ = hit.point;     
             photon.direction_ = ray.d; // Dirección incidente
+            photon.flux_ = flux;
             photon_list.push_back(photon);
         }
     } else {
@@ -115,11 +114,12 @@ inline void recursive_trace_photon(const int depth,
     // Crear nuevo rayo
     Ray newRay(hit.point, newRayDir);
 
-    // Calcular nuevo flujo del fotón
-    Color newFlux = throughput * flux; // Lo que transmite el material * flujo entrante
+    if (photon_list.size() >= static_cast<size_t>(maxPhotonsPerLight)) {
+        return; // Hemos alcanzado el número máximo de fotones por luz
+    }
 
     // Llamada recursiva
-    recursive_trace_photon(depth + 1, newRay, newFlux, shapes, photon_list);
+    recursive_trace_photon(depth + 1, newRay, shapes, throughput * flux, photon_list, maxPhotonsPerLight);
 }
 
 
@@ -139,37 +139,53 @@ inline Direction sampleDirectionFromPointLight() {
     return Direction(x, y, z);
 }
 
-inline PhotonMap generate_photon_map(const int numRays,
+inline void calculatePhotonsFlux(const int numRays,
+                                 list<Photon>& photons
+){    
+    // Normalización en base a número de rayos lanzados desde la luz
+    Color normalization = 4.0 * M_PI / static_cast<double>(numRays);
+
+    // Actualizar el flujo de cada fotón en la lista
+    for (auto& photon: photons) {
+        photon.flux_ = photon.flux_ * normalization;
+    }
+}
+
+inline PhotonMap generate_photon_map(const int numPhotons,
                         const vector<unique_ptr<GeometricShape>>& shapes,
                         const vector<unique_ptr<PointLight>>& lights
-        ){
-    list<Photon> photons;
-    double doubleNumRays = static_cast<double>(numRays);
-    double doubleLights = static_cast<double>(lights.size());
-    double raysPerLight = doubleNumRays / doubleLights;
+){
+    list<Photon> allPhotons;    
+    double photonsPerLight = numPhotons / lights.size();
     
-    int totalPhotonsToGenerate = static_cast<int>(floor(raysPerLight)) * lights.size();
     int photonsGenerated = 0;
     int lastProgressPercent = 0;
 
-    cout << "Generando " << totalPhotonsToGenerate << " fotones desde " << lights.size() << " luz(ces)..." << endl;
+    cout << "Generando " << numPhotons << " fotones desde " << lights.size() << " luz(ces)..." << endl;
 
     for (const auto& light: lights) {
-        Color initialFlux = light->intensity * 4.0 * M_PI / raysPerLight;
-        for (int i = 0; i < floor(raysPerLight); ++i) {
+        list<Photon> photonsAux;
+        int numRays = 0;
+        while (photonsGenerated < photonsPerLight) { 
             // Lanzar dirección aleatoria desde la luz 
             Direction dir = sampleDirectionFromPointLight();
             Ray ray(light->position, dir);
+            
+            // Aumentamos el nº de rayos lanzados por esa luz
+            numRays++;
+
             // Llamar recursive_trace_photon con
             // - Profundidad 0
             // - Rayo desde la luz en la dirección muestreada
-            // - Flujo igual a la intensidad de la luz
             // - Geometrías de la escena
-            recursive_trace_photon(0, ray, initialFlux, shapes, photons);
+            // - Lista de fotones donde almacenar los fotones generados
+            // - Nº de fotones máximos a generar por luz
+            recursive_trace_photon(0, ray, shapes, light->intensity, photonsAux, photonsPerLight);
+
+            photonsGenerated = photonsAux.size() + allPhotons.size();
             
             // Actualizar progreso
-            photonsGenerated++;
-            int currentProgress = (photonsGenerated * 100) / totalPhotonsToGenerate;
+            int currentProgress = (photonsGenerated * 100) / numPhotons;
             
             // Mostrar progreso cada 10%
             if (currentProgress >= lastProgressPercent + 10) {
@@ -180,15 +196,21 @@ inline PhotonMap generate_photon_map(const int numRays,
                 std::tm local_time = *std::localtime(&now_time);
                 
                 cout << "  Progreso fotones: " << currentProgress << "% (" 
-                     << photonsGenerated << "/" << totalPhotonsToGenerate << ") - "
+                     << photonsGenerated << "/" << numPhotons << ") - "
                      << std::put_time(&local_time, "%H:%M:%S") << endl;
             }
         }
+        // Calculamos el flujo de cada fotón generado por esta luz
+        calculatePhotonsFlux(numRays, photonsAux);
+
+        // Añadir los fotones generados por esta luz a la lista global
+        allPhotons.insert(allPhotons.end(), photonsAux.begin(), photonsAux.end());
     }
-    cout << "Total de fotones almacenados en el mapa: " << photons.size() << endl;
+    cout << "Total de fotones almacenados en el mapa: " << allPhotons.size() << endl;
+    cout << "Next Event Estimation: " << (useNEE ? "Activado" : "Desactivado") << endl;
 
     // Crear el mapa de fotones con la lista de fotones generada
-    PhotonMap photon_map(photons, PhotonAxisPositition());
+    PhotonMap photon_map(allPhotons, PhotonAxisPositition());
 
     return photon_map;
 }
@@ -219,13 +241,6 @@ inline Color nextEventEstimation(const HitInfo& hit,
         }
     }
     return L;
-}
-
-inline Color firstBouncePhotonEstimation(const HitInfo& hit,
-                                         const PhotonMap& photon_map
-                                         ) 
-{
-
 }
 
 inline Color photonMap(const Ray& ray, 
@@ -259,16 +274,9 @@ inline Color photonMap(const Ray& ray,
     // ============================================
     // 1. ILUMINACIÓN DIRECTA (Direct Lighting)
     // ============================================
-    switch (iluminacionDirecta) {
-        case 1: // Next-event estimation
-            L = nextEventEstimation(hit, lights, shapes);
-            break;
-        case 2: // Utilizando los fotones del primer rebote
-            L = firstBouncePhotonEstimation(hit, photon_map);
-            break;
-        default:
-            // No hacer nada
-            break;
+    if (useNEE) {
+        // Usar Next Event Estimation para iluminación directa
+        L = nextEventEstimation(hit, lights, shapes);
     }
 
     // ============================================
@@ -285,7 +293,7 @@ inline Color photonMap(const Ray& ray,
 
         // Calculamos el radio máximo entre los k fotones más cercanos
         float maxDist = 0.0f;
-        for (const Photon* photon : nearestPhotons) {
+        for (const Photon* photon: nearestPhotons) {
             float dist = (photon->position_ - hit.point).norm();
             maxDist = max(maxDist, dist);
         }

@@ -193,9 +193,9 @@ CMakeFiles/ray_lib.dir/clean:
 
 # All Build rule for target.
 CMakeFiles/generate_image_PT.dir/all: CMakeFiles/geometry_lib.dir/all
+CMakeFiles/generate_image_PT.dir/all: CMakeFiles/ray_lib.dir/all
 CMakeFiles/generate_image_PT.dir/all: CMakeFiles/imaging_lib.dir/all
 CMakeFiles/generate_image_PT.dir/all: CMakeFiles/light_lib.dir/all
-CMakeFiles/generate_image_PT.dir/all: CMakeFiles/ray_lib.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PT.dir/build.make CMakeFiles/generate_image_PT.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PT.dir/build.make CMakeFiles/generate_image_PT.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles --progress-num=3,4 "Built target generate_image_PT"
@@ -222,9 +222,9 @@ CMakeFiles/generate_image_PT.dir/clean:
 
 # All Build rule for target.
 CMakeFiles/generate_image_PM.dir/all: CMakeFiles/geometry_lib.dir/all
+CMakeFiles/generate_image_PM.dir/all: CMakeFiles/ray_lib.dir/all
 CMakeFiles/generate_image_PM.dir/all: CMakeFiles/imaging_lib.dir/all
 CMakeFiles/generate_image_PM.dir/all: CMakeFiles/light_lib.dir/all
-CMakeFiles/generate_image_PM.dir/all: CMakeFiles/ray_lib.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PM.dir/build.make CMakeFiles/generate_image_PM.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_image_PM.dir/build.make CMakeFiles/generate_image_PM.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rauls19/Escritorio/4o/InfGr/build/CMakeFiles --progress-num=1,2 "Built target generate_image_PM"

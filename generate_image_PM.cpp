@@ -29,7 +29,7 @@ using namespace std;
 
 // Variables globales
 int current_scene = 1;          // Escena actual
-int raysPerPixel = 512;         // Rayos por píxel (SPP)
+int raysPerPixel = 2;         // Rayos por píxel (SPP)
 int numPhotons = 100000;        // Número de fotones para el mapa de fotones
 int numNeighbors = 50;         // Número de vecinos a considerar en el mapa de fotones
 
@@ -509,7 +509,7 @@ int main() {
                     }
                 }
 
-                cout << "Número de rayos para fotones (actual " << numPhotons << ", presiona Enter para mantener): ";
+                cout << "Número de fotones a generar (actual " << numPhotons << ", presiona Enter para mantener): ";
                 string numPhotonsInput;
                 getline(cin, numPhotonsInput);
                 if (!numPhotonsInput.empty()) {
@@ -519,11 +519,14 @@ int main() {
                             numPhotons = newNumPhotons;
                         }
                     } catch (const exception&) {
-                        cout << "Entrada inválida, manteniendo número de rayos para fotones actual." << endl;
+                        cout << "Entrada inválida, manteniendo número de fotones actual." << endl;
                     }
                 }
 
-                cout << "Número de vecinos (k) para estimación (actual " << numNeighbors << ", presiona Enter para mantener): ";
+                numNeighbors = static_cast<int>(numPhotons * 0.01); // Valor recomendado por defecto
+
+                cout << "Número de vecinos (k) para estimación, ";
+                cout << "(recomendado y actual " << numNeighbors << ", presiona Enter para mantener): ";
                 string numNeighborsInput;
                 getline(cin, numNeighborsInput);
                 if (!numNeighborsInput.empty()) {
@@ -551,7 +554,7 @@ int main() {
 
                 cout << "\n=== GENERANDO IMAGEN ===" << endl;
                 cout << "Parámetros:" << endl;
-                cout << "  - Fotones totales: " << numPhotons << endl;
+                cout << "  - Fotones generados: " << numPhotons << endl;
                 cout << "  - K vecinos para estimación: " << numNeighbors << endl;
                 cout << "  - Caminos por píxel (SPP): " << raysPerPixel << endl;
 
