@@ -54,7 +54,7 @@ Direction Sphere::calculateNormalAtPoint(const Point& p) const {
     return (p - center).normalized();
 }
 
-std::vector<Point> Sphere::intersections(const Ray& ray) const {
+vector<Point> Sphere::intersections(const Ray& ray) const {
     vector<Point> intersectionPoints;
     Direction oc = ray.o - center;
     double a = ray.d.dot(ray.d);
@@ -87,6 +87,11 @@ std::vector<Point> Sphere::intersections(const Ray& ray) const {
         
         return intersectionPoints;
     }
+}
+
+bool Sphere::inSurface(const Point& p) const {
+    double distSquared = (p - center).dot(p - center);
+    return fabs(distSquared - radius * radius) < 1e-6; // Usar un umbral pequeño para la comparación
 }
 
 void Sphere::print() const {

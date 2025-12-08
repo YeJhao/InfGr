@@ -56,7 +56,7 @@ void Triangle::computeNormal() {
 * @param p Punto a verificar.
 * @return true si el punto está dentro del triángulo, false en caso contrario.
 */
-bool Triangle::isPointInside(const Point& p) const {
+bool Triangle::inSurface(const Point& p) const {
     // Using barycentric coordinates method
     Direction v0v1 = v1 - v0;
     Direction v0v2 = v2 - v0;
@@ -75,7 +75,7 @@ bool Triangle::isPointInside(const Point& p) const {
     return (u >= 0) && (v >= 0) && (u + v <= 1);
 }
 
-std::vector<Point> Triangle::intersections(const Ray& ray) const {
+vector<Point> Triangle::intersections(const Ray& ray) const {
     vector<Point> intersectionPoints;
     
     // First, find intersection with the plane containing the triangle
@@ -92,7 +92,7 @@ std::vector<Point> Triangle::intersections(const Ray& ray) const {
     Point intersectionPoint = ray.o + ray.d * t;
     
     // Check if the intersection point is inside the triangle using barycentric coordinates
-    if (isPointInside(intersectionPoint)) {
+    if (inSurface(intersectionPoint)) {
         intersectionPoints.push_back(intersectionPoint);
     }
     

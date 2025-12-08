@@ -20,7 +20,10 @@ using namespace std;
 // Variables de configuración
 #define PHOTON_MIN_DEPTH 2
 
-const bool useNEE = true; // Usar Next Event Estimation
+// Tipo de kernel para estimación del mapa de fotones
+//      0 - Caja
+//      1 - Triangulo
+//      2 - Gaussiano
 
 // Variables globales
 mt19937 gen(random_device{}());
@@ -34,27 +37,29 @@ class Photon {
         Direction direction_;   // Dirección incidente del fotón
         Color flux_;            // Flujo (potencia) del fotón
 
-        float position(std::size_t i) const { 
+        int prof_;
+
+        float position(size_t i) const { 
             return static_cast<float>(position_.coords(i)); 
         }};
 
 struct PhotonAxisPositition {
-    float operator()(const Photon& p, std::size_t i) const {
+    float operator()(const Photon& p, size_t i) const {
         return p.position(i);
     }
 };
 
 using PhotonMap = nn::KDTree<Photon,3,PhotonAxisPositition>;
 
-// Función auxiliar para convertir Point a std::array<float, 3>
-inline std::array<float, 3> pointToArray(const Point& p) {
+// Función auxiliar para convertir Point a array<float, 3>
+inline array<float, 3> pointToArray(const Point& p) {
     return {static_cast<float>(p.coords(0)), 
             static_cast<float>(p.coords(1)), 
             static_cast<float>(p.coords(2))};
 }
 
-// Función auxiliar para convertir std::array a Point
-inline Point arrayToPoint(const std::array<float, 3>& arr) {
+// Función auxiliar para convertir array a Point
+inline Point arrayToPoint(const array<float, 3>& arr) {
     return Point(static_cast<double>(arr[0]), 
                  static_cast<double>(arr[1]), 
                  static_cast<double>(arr[2]));
@@ -70,8 +75,9 @@ inline void recursive_trace_photon(const int depth,
                         const vector<unique_ptr<GeometricShape>>& shapes,
                         const Color& flux,
                         list<Photon>& photon_list,
-                        const int maxPhotonsPerLight
-                        ){
+                        const int maxPhotonsPerLight,
+                        const bool useNEE
+    ){
     // Encontrar intersección más cercana con la geometría
     HitInfo hit = findClosestIntersection(ray, shapes, ray.o);
 
@@ -86,6 +92,7 @@ inline void recursive_trace_photon(const int depth,
             photon.position_ = hit.point;     
             photon.direction_ = ray.d; // Dirección incidente
             photon.flux_ = flux;
+            photon.prof_ = depth;
             photon_list.push_back(photon);
         }
     } else {
@@ -119,7 +126,7 @@ inline void recursive_trace_photon(const int depth,
     }
 
     // Llamada recursiva
-    recursive_trace_photon(depth + 1, newRay, shapes, throughput * flux, photon_list, maxPhotonsPerLight);
+    recursive_trace_photon(depth + 1, newRay, shapes, throughput * flux, photon_list, maxPhotonsPerLight, useNEE);
 }
 
 
@@ -153,7 +160,8 @@ inline void calculatePhotonsFlux(const int numRays,
 
 inline PhotonMap generate_photon_map(const int numPhotons,
                         const vector<unique_ptr<GeometricShape>>& shapes,
-                        const vector<unique_ptr<PointLight>>& lights
+                        const vector<unique_ptr<PointLight>>& lights,
+                        const bool useNEE
 ){
     list<Photon> allPhotons;    
     double photonsPerLight = numPhotons / lights.size();
@@ -161,7 +169,8 @@ inline PhotonMap generate_photon_map(const int numPhotons,
     int photonsGenerated = 0;
     int lastProgressPercent = 0;
 
-    cout << "Generando " << numPhotons << " fotones desde " << lights.size() << " luz(ces)..." << endl;
+    cout << "Generando " << numPhotons << " fotones desde " << lights.size() 
+         << (lights.size() == 1 ? " luz..." : " luces...") << endl;
 
     for (const auto& light: lights) {
         list<Photon> photonsAux;
@@ -178,9 +187,11 @@ inline PhotonMap generate_photon_map(const int numPhotons,
             // - Profundidad 0
             // - Rayo desde la luz en la dirección muestreada
             // - Geometrías de la escena
+            // - Intensidad de la luz como flujo inicial
             // - Lista de fotones donde almacenar los fotones generados
             // - Nº de fotones máximos a generar por luz
-            recursive_trace_photon(0, ray, shapes, light->intensity, photonsAux, photonsPerLight);
+            // - Uso de Next Event Estimation
+            recursive_trace_photon(0, ray, shapes, light->intensity, photonsAux, photonsPerLight, useNEE);
 
             photonsGenerated = photonsAux.size() + allPhotons.size();
             
@@ -191,13 +202,13 @@ inline PhotonMap generate_photon_map(const int numPhotons,
             if (currentProgress >= lastProgressPercent + 10) {
                 lastProgressPercent = currentProgress;
                 
-                auto now = std::chrono::system_clock::now();
-                std::time_t now_time = std::chrono::system_clock::to_time_t(now);
-                std::tm local_time = *std::localtime(&now_time);
+                auto now = chrono::system_clock::now();
+                time_t now_time = chrono::system_clock::to_time_t(now);
+                tm local_time = *localtime(&now_time);
                 
                 cout << "  Progreso fotones: " << currentProgress << "% (" 
                      << photonsGenerated << "/" << numPhotons << ") - "
-                     << std::put_time(&local_time, "%H:%M:%S") << endl;
+                     << put_time(&local_time, "%H:%M:%S") << endl;
             }
         }
         // Calculamos el flujo de cada fotón generado por esta luz
@@ -207,7 +218,7 @@ inline PhotonMap generate_photon_map(const int numPhotons,
         allPhotons.insert(allPhotons.end(), photonsAux.begin(), photonsAux.end());
     }
     cout << "Total de fotones almacenados en el mapa: " << allPhotons.size() << endl;
-    cout << "Next Event Estimation: " << (useNEE ? "Activado" : "Desactivado") << endl;
+    cout << "Algun foton de prof 0?: " << (any_of(allPhotons.begin(), allPhotons.end(), [](const Photon& p){ return p.prof_ == 0; }) ? "Sí" : "No") << endl;
 
     // Crear el mapa de fotones con la lista de fotones generada
     PhotonMap photon_map(allPhotons, PhotonAxisPositition());
@@ -243,11 +254,106 @@ inline Color nextEventEstimation(const HitInfo& hit,
     return L;
 }
 
+inline Color boxKernel(HitInfo& hit,
+                       const vector<const Photon*>& nearestPhotons,
+                       double pDiff) {
+    Color indirectLight(0, 0, 0);
+
+    // Calculamos el radio máximo entre los k fotones más cercanos
+    float maxDist = 0.0f;
+    for (const Photon* photon: nearestPhotons) {
+        float dist = (photon->position_ - hit.point).norm();
+        maxDist = max(maxDist, dist);
+    }
+
+    // Denominador de la estimación del mapa de fotones
+    float area = M_PI * maxDist * maxDist;
+
+    // BRDF difusa
+    Color fr = hit.kd / (M_PI * pDiff);
+
+    for (const Photon* photon: nearestPhotons) {            
+        // Contribución += BSDF * flujo del fotón / área
+        indirectLight = indirectLight + (fr * photon->flux_ / area);
+    }
+
+    return indirectLight;
+}
+
+inline Color triangleKernel(HitInfo& hit,
+                           const vector<const Photon*>& nearestPhotons,
+                           double pDiff) {
+    Color indirectLight(0, 0, 0);
+
+    // Calculamos el radio máximo entre los k fotones más cercanos
+    float maxDist = 0.0f;
+    for (const Photon* photon: nearestPhotons) {
+        float dist = (photon->position_ - hit.point).norm();
+        maxDist = max(maxDist, dist);
+    }
+
+    // Denominador de la estimación del mapa de fotones
+    float area = M_PI * maxDist * maxDist;
+
+    // BRDF difusa
+    Color fr = hit.kd / (M_PI * pDiff);
+
+    for (const Photon* photon: nearestPhotons) {            
+        float dist = (photon->position_ - hit.point).norm();
+        float weight = 1.0f - (dist / maxDist); // Peso del kernel triangular
+
+        // Contribución += BSDF * flujo del fotón * peso / área
+        indirectLight = indirectLight + (fr * photon->flux_ * weight / area);
+    }
+
+    return indirectLight;
+}
+
+inline Color gaussianKernel(HitInfo& hit,
+                           const vector<const Photon*>& nearestPhotons,
+                           double pDiff) {
+    Color indirectLight(0, 0, 0);
+
+    // Calculamos el radio máximo entre los k fotones más cercanos
+    float maxDist = 0.0f;
+    for (const Photon* photon: nearestPhotons) {
+        float dist = (photon->position_ - hit.point).norm();
+        maxDist = max(maxDist, dist);
+    }
+
+    // Denominador de la estimación del mapa de fotones
+    float area = M_PI * maxDist * maxDist;
+
+    // BRDF difusa
+    Color fr = hit.kd / (M_PI * pDiff);
+    float sigma = maxDist / 3;
+
+    for (const Photon* photon: nearestPhotons) {            
+        float dist = (photon->position_ - hit.point).norm();
+        float weight = exp(-(dist * dist) / (2 * sigma * sigma)); // Peso del kernel gaussiano
+
+        // Contribución += BSDF * flujo del fotón * peso / área
+        indirectLight = indirectLight + (fr * photon->flux_ * weight / (sqrt(2*M_PI) * sigma * area));
+    }
+
+    return indirectLight;
+}
+
+inline void cribePhotons(GeometricShape* shape, vector<const Photon*>& photons) {
+    for (const Photon* photon: photons) {
+        if (!shape->inSurface(photon->position_)) {
+            photons.erase(remove(photons.begin(), photons.end(), photon), photons.end());
+        }
+    }
+}
+
 inline Color photonMap(const Ray& ray, 
                        const vector<unique_ptr<GeometricShape>>& shapes,
                        const vector<unique_ptr<PointLight>>& lights,
                        int depth,
                        const PhotonMap& photon_map,
+                       const bool useNEE,
+                       const int kernel,
                        const int k = 50) 
 {
     // Límite de seguridad (por si acaso)
@@ -291,22 +397,20 @@ inline Color photonMap(const Ray& ray,
         array<float, 3> queryPoint = pointToArray(hit.point);
         vector<const Photon*> nearestPhotons = photon_map.nearest_neighbors(queryPoint, k);
 
-        // Calculamos el radio máximo entre los k fotones más cercanos
-        float maxDist = 0.0f;
-        for (const Photon* photon: nearestPhotons) {
-            float dist = (photon->position_ - hit.point).norm();
-            maxDist = max(maxDist, dist);
-        }
+        cribePhotons(hit.shape, nearestPhotons);
 
-        // Denominador de la estimación del mapa de fotones
-        float area = M_PI * maxDist * maxDist;
-
-        // BRDF difusa
-        Color fr = hit.kd / (M_PI * pDiff);
-
-        for (const Photon* photon: nearestPhotons) {            
-            // Contribución += BSDF * flujo del fotón / área
-            indirectLight = indirectLight + (fr * photon->flux_ / area);
+        switch (kernel) {
+            case 1: // Caja
+                indirectLight = boxKernel(hit, nearestPhotons, pDiff);
+                break;
+            case 2: // Triángulo
+                indirectLight = triangleKernel(hit, nearestPhotons, pDiff);
+                break;
+            case 3: // Gaussiano
+                indirectLight = gaussianKernel(hit, nearestPhotons, pDiff);
+                break;
+            default:
+                break;
         }
 
     } else {
@@ -317,7 +421,7 @@ inline Color photonMap(const Ray& ray,
             Direction newRayDir = perfectReflection(wo, hit.normal);
 
             Ray newRay(hit.point, newRayDir);
-            indirectLight = indirectLight + (photonMap(newRay, shapes, lights, depth + 1, photon_map, k) / pSpec);
+            indirectLight = indirectLight + (photonMap(newRay, shapes, lights, depth + 1, photon_map, useNEE, kernel, k) / pSpec);
 
         } else {
             // ===== LÓBULO DE TRANSMISIÓN (Refracción) =====
@@ -359,7 +463,7 @@ inline Color photonMap(const Ray& ray,
 
             Ray newRay(hit.point, newRayDir);
 
-            indirectLight = indirectLight + (photonMap(newRay, shapes, lights, depth + 1, photon_map, k) / pTrans);
+            indirectLight = indirectLight + (photonMap(newRay, shapes, lights, depth + 1, photon_map, useNEE, kernel, k) / pTrans);
         }
     }
     

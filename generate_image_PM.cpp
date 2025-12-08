@@ -540,6 +540,15 @@ int main() {
                     }
                 }
 
+                cout << "¿Quieres utilizar Next Event Estimation? (s/n): ";
+                string neeInput;
+                getline(cin, neeInput);
+                bool useNEE = (neeInput == "s" || neeInput == "S");
+
+                cout << "Kernel a utilizar (1. Caja | 2. Cono | 3. Gaussiano): ";
+                int kernelChoice;
+                cin >> kernelChoice;
+
                 // Guardar la imagen
                 cout << "\nNombre de la imagen (sin extensión): ";
                 string nameInput;
@@ -559,11 +568,11 @@ int main() {
                 cout << "  - Caminos por píxel (SPP): " << raysPerPixel << endl;
 
                 // Inicio del tiempo de generación
-                auto start_time = std::chrono::high_resolution_clock::now();
-                auto now = std::chrono::system_clock::now();
-                std::time_t now_time = std::chrono::system_clock::to_time_t(now);
-                std::tm local_time = *std::localtime(&now_time);
-                cout << "Inicio: " << std::put_time(&local_time, "%H:%M:%S") << endl;
+                auto start_time = chrono::high_resolution_clock::now();
+                auto now = chrono::system_clock::now();
+                time_t now_time = chrono::system_clock::to_time_t(now);
+                tm local_time = *localtime(&now_time);
+                cout << "Inicio: " << put_time(&local_time, "%H:%M:%S") << endl;
                 
                 // Crear la imagen
                 Image image(pixelWidth, pixelHeight);
@@ -575,18 +584,18 @@ int main() {
 
                 // Paso 1: Generar mapa de fotones lanzando rayos desde la cámara
                 cout << "\n--- PASO 1: Generando mapa de fotones ---" << endl;
-                auto photon_start = std::chrono::high_resolution_clock::now();
+                auto photon_start = chrono::high_resolution_clock::now();
 
-                PhotonMap photon_map = generate_photon_map(numPhotons, shapes, lights);
+                PhotonMap photon_map = generate_photon_map(numPhotons, shapes, lights, useNEE);
 
-                auto photon_end = std::chrono::high_resolution_clock::now();
-                std::chrono::duration<double> photon_duration = photon_end - photon_start;
+                auto photon_end = chrono::high_resolution_clock::now();
+                chrono::duration<double> photon_duration = photon_end - photon_start;
                 cout << "Mapa de fotones generado en " << fixed << setprecision(2) 
                      << photon_duration.count() << " segundos" << endl;
 
                 // Paso 2: Renderizar la imagen con path tracing y el mapa de fotones
                 cout << "\n--- PASO 2: Renderizando imagen ---" << endl;
-                auto render_start = std::chrono::high_resolution_clock::now();
+                auto render_start = chrono::high_resolution_clock::now();
 
                 for (int i = 0; i < pixelHeight; ++i) {
                     for (int j = 0; j < pixelWidth; ++j) {
@@ -620,7 +629,8 @@ int main() {
                             Ray ray(camera.origin, rayDirection.normalized());
                             
                             // Trazar el rayo con photon mapping recursivo
-                            Color rayColor = photonMap(ray, shapes, lights, 0, photon_map, numNeighbors);
+                            Color rayColor = photonMap(ray, shapes, lights, 0, photon_map, 
+                                                       useNEE, kernelChoice, numNeighbors);
                             
                             // Acumular el color de este rayo
                             total = total + rayColor;
@@ -637,31 +647,28 @@ int main() {
                     if ((i + 1) % (pixelHeight / 10) == 0 || i == pixelHeight - 1) {
                         int progress = ((i + 1) * 100) / pixelHeight;
                         
-                        // Obtener la hora actual
-                        auto now = std::chrono::system_clock::now();
-
-                        std::time_t now_time = std::chrono::system_clock::to_time_t(now);
-
-                        std::tm local_time = *std::localtime(&now_time);
+                        auto now = chrono::system_clock::now();
+                        time_t now_time = chrono::system_clock::to_time_t(now);
+                        tm local_time = *localtime(&now_time);
 
                         cout << "Progreso: " << progress << "% (" << (i + 1) << "/" << pixelHeight << " filas) - "
-                             << std::put_time(&local_time, "%H:%M:%S") << endl;
+                             << put_time(&local_time, "%H:%M:%S") << endl;
                     }
                 }
 
-                auto render_end = std::chrono::high_resolution_clock::now();
-                std::chrono::duration<double> render_duration = render_end - render_start;
+                auto render_end = chrono::high_resolution_clock::now();
+                chrono::duration<double> render_duration = render_end - render_start;
                 cout << "Renderizado completado en " << fixed << setprecision(2) 
                      << render_duration.count() << " segundos" << endl;
 
-                auto end_time = std::chrono::high_resolution_clock::now();
-                auto end = std::chrono::system_clock::now();
-                std::time_t end_time_t = std::chrono::system_clock::to_time_t(end);
-                std::tm end_local_time = *std::localtime(&end_time_t);
-                cout << "\nFin: " << std::put_time(&end_local_time, "%H:%M:%S") << endl;
+                auto end_time = chrono::high_resolution_clock::now();
+                auto end = chrono::system_clock::now();
+                time_t end_time_t = chrono::system_clock::to_time_t(end);
+                tm end_local_time = *localtime(&end_time_t);
+                cout << "\nFin: " << put_time(&end_local_time, "%H:%M:%S") << endl;
                 
                 // Calcular duración total
-                std::chrono::duration<double> duration = end_time - start_time;
+                chrono::duration<double> duration = end_time - start_time;
                 double elapsed_seconds = duration.count();
                 
                 cout << fixed << setprecision(4);

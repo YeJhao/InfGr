@@ -13,6 +13,8 @@
 #include "geometric_shape.hpp"
 #include "color.hpp"
 
+using namespace std;
+
 class Plane : public GeometricShape {
     public:
         Direction normal; // Vector normal del plano
@@ -25,7 +27,8 @@ class Plane : public GeometricShape {
               const Color& kd_, const Color& ks_, const Color& kt_, double ior_ = 1.0);
 
         // Sobrescribe el método virtual puro
-        std::vector<Point> intersections(const Ray& ray) const override;
+        vector<Point> intersections(const Ray& ray) const override;
+        bool inSurface(const Point& p) const override;
         
         // Sobrescribe el método de impresión
         void print() const override;

@@ -13,6 +13,8 @@
 #include "geometric_shape.hpp"
 #include "color.hpp"
 
+using namespace std;
+
 class Sphere : public GeometricShape {
     public:
         Point center; // Centro de la esfera
@@ -27,8 +29,9 @@ class Sphere : public GeometricShape {
         Direction calculateNormalAtPoint(const Point& p) const;
 
         // Sobrescribe el método virtual puro
-        std::vector<Point> intersections(const Ray& ray) const override;
-        
+        vector<Point> intersections(const Ray& ray) const override;
+        bool inSurface(const Point& p) const override;
+
         // Sobrescribe el método de impresión
         void print() const override;
 };

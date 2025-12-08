@@ -41,7 +41,7 @@ Plane::Plane(const Direction& normal_, double distance_, const Color& emission_,
     }
 }
 
-std::vector<Point> Plane::intersections(const Ray& ray) const {
+vector<Point> Plane::intersections(const Ray& ray) const {
     vector<Point> intersectionPoints;
     
     double denom = ray.d.dot(normal);
@@ -59,6 +59,12 @@ std::vector<Point> Plane::intersections(const Ray& ray) const {
     }
     
     return intersectionPoints;
+}
+
+bool Plane::inSurface(const Point& p) const {
+    // Comprobar si el punto satisface la ecuación del plano
+    double distToPlane = normal.dot(Direction(p.coords)) + distance;
+    return fabs(distToPlane) < 1e-6; // Usar un umbral pequeño para la comparación
 }
 
 void Plane::print() const {
