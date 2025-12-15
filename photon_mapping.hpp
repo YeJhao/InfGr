@@ -76,7 +76,8 @@ inline void recursive_trace_photon(const int depth,
                         const Color& flux,
                         list<Photon>& photon_list,
                         const int maxPhotonsPerLight,
-                        const bool useNEE
+                        const bool useNEE,
+                        int& numRays
     ){
     // Encontrar intersección más cercana con la geometría
     HitInfo hit = findClosestIntersection(ray, shapes, ray.o);
@@ -125,10 +126,11 @@ inline void recursive_trace_photon(const int depth,
         return; // Hemos alcanzado el número máximo de fotones por luz
     }
 
-    // Llamada recursiva
-    recursive_trace_photon(depth + 1, newRay, shapes, throughput * flux, photon_list, maxPhotonsPerLight, useNEE);
-}
+    numRays++;
 
+    // Llamada recursiva
+    recursive_trace_photon(depth + 1, newRay, shapes, throughput * flux, photon_list, maxPhotonsPerLight, useNEE, numRays);
+}
 
 inline Direction sampleDirectionFromPointLight() {
     // Generación de números aleatorios
@@ -150,7 +152,7 @@ inline void calculatePhotonsFlux(const int numRays,
                                  list<Photon>& photons
 ){    
     // Normalización en base a número de rayos lanzados desde la luz
-    Color normalization = 4.0 * M_PI / static_cast<double>(numRays);
+    double normalization = 4.0 * M_PI / static_cast<double>(numRays);
 
     // Actualizar el flujo de cada fotón en la lista
     for (auto& photon: photons) {
@@ -191,7 +193,7 @@ inline PhotonMap generate_photon_map(const int numPhotons,
             // - Lista de fotones donde almacenar los fotones generados
             // - Nº de fotones máximos a generar por luz
             // - Uso de Next Event Estimation
-            recursive_trace_photon(0, ray, shapes, light->intensity, photonsAux, photonsPerLight, useNEE);
+            recursive_trace_photon(0, ray, shapes, light->intensity, photonsAux, photonsPerLight, useNEE, numRays);
 
             photonsGenerated = photonsAux.size() + allPhotons.size();
             

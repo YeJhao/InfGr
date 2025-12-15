@@ -566,6 +566,15 @@ int main() {
                 cout << "  - Fotones generados: " << numPhotons << endl;
                 cout << "  - K vecinos para estimación: " << numNeighbors << endl;
                 cout << "  - Caminos por píxel (SPP): " << raysPerPixel << endl;
+                cout << "  - Next Event Estimation: " << (useNEE ? "Sí" : "No") << endl;
+                cout << "  - Kernel: ";
+                switch (kernelChoice) {
+                    case 1: cout << "Caja"; break;
+                    case 2: cout << "Cono"; break;
+                    case 3: cout << "Gaussiano"; break;
+                    default: cout << "Desconocido"; break;
+                }
+                cout << endl;
 
                 // Inicio del tiempo de generación
                 auto start_time = chrono::high_resolution_clock::now();
