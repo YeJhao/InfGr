@@ -24,6 +24,7 @@
 #include <random>
 #include <chrono>
 #include <iomanip>
+#include <omp.h>
 
 using namespace std;
 
@@ -588,8 +589,7 @@ int main() {
                 
                 // Generador de números aleatorios
                 random_device rd;
-                mt19937 gen(rd());
-                uniform_real_distribution<double> dis(0.0, 1.0);
+                atomic<int> filasProcesadas = 0;
 
                 // Paso 1: Generar mapa de fotones lanzando rayos desde la cámara
                 cout << "\n--- PASO 1: Generando mapa de fotones ---" << endl;
@@ -606,62 +606,75 @@ int main() {
                 cout << "\n--- PASO 2: Renderizando imagen ---" << endl;
                 auto render_start = chrono::high_resolution_clock::now();
 
-                for (int i = 0; i < pixelHeight; ++i) {
-                    for (int j = 0; j < pixelWidth; ++j) {
-                        // Calcular los límites del píxel en coordenadas del mundo
-                        double pixelSizeX = 2.0 / pixelWidth;   // Tamaño de un píxel en X
-                        double pixelSizeY = 2.0 / pixelHeight; // Tamaño de un píxel en Y
-                        
-                        // Esquina inferior-izquierda del píxel en coordenadas de cámara
-                        double pixelMaxX = 1.0 - j * pixelSizeX;
-                        double pixelMinX = pixelMaxX - pixelSizeX;
-                        double pixelMaxY = 1.0 - i * pixelSizeY;
-                        double pixelMinY = pixelMaxY - pixelSizeY;
-                        
-                        // Acumuladores para el color
-                        Color total(0, 0, 0);
+                #pragma omp parallel
+                {
+                    // De momento determinista (TODO: pensar en inclusión de rd())
+                    mt19937 gen(1234 + omp_get_thread_num()); // Semilla diferente por hilo
+                    uniform_real_distribution<double> dis(0.0, 1.0);
 
-                        // Lanzar múltiples rayos por píxel (Monte Carlo)
-                        for (int ray_sample = 0; ray_sample < raysPerPixel; ++ray_sample) {
-                            // Generar coordenadas aleatorias dentro del píxel en coordenadas de cámara
-                            double x = pixelMinX + dis(gen) * pixelSizeX;
-                            double y = pixelMinY + dis(gen) * pixelSizeY;
-                            double z = 1; // Plano de imagen en z=1 en coordenadas de cámara
+                    #pragma omp for schedule(dynamic)
+                    for (int i = 0; i < pixelHeight; ++i) {
+                        for (int j = 0; j < pixelWidth; ++j) {
+                            // Calcular los límites del píxel en coordenadas del mundo
+                            double pixelSizeX = 2.0 / pixelWidth;   // Tamaño de un píxel en X
+                            double pixelSizeY = 2.0 / pixelHeight; // Tamaño de un píxel en Y
                             
-                            // Convertir punto del plano de imagen de coordenadas de cámara a mundo
-                            Point cameraPixelPoint(x, y, z);
-                            Point cameraLocalOrigin = Point(0,0,0);
-                            Direction cameraDirection = cameraPixelPoint - cameraLocalOrigin;
-                            Direction rayDirection = camera.cameraToWorld(cameraDirection);
+                            // Esquina inferior-izquierda del píxel en coordenadas de cámara
+                            double pixelMaxX = 1.0 - j * pixelSizeX;
+                            double pixelMinX = pixelMaxX - pixelSizeX;
+                            double pixelMaxY = 1.0 - i * pixelSizeY;
+                            double pixelMinY = pixelMaxY - pixelSizeY;
                             
-                            // Crear el rayo desde el origen de la cámara hacia el punto del píxel
-                            Ray ray(camera.origin, rayDirection.normalized());
+                            // Acumuladores para el color
+                            Color total(0, 0, 0);
+
+                            // Lanzar múltiples rayos por píxel (Monte Carlo)
+                            for (int ray_sample = 0; ray_sample < raysPerPixel; ++ray_sample) {
+                                // Generar coordenadas aleatorias dentro del píxel en coordenadas de cámara
+                                double x = pixelMinX + dis(gen) * pixelSizeX;
+                                double y = pixelMinY + dis(gen) * pixelSizeY;
+                                double z = 1; // Plano de imagen en z=1 en coordenadas de cámara
+                                
+                                // Convertir punto del plano de imagen de coordenadas de cámara a mundo
+                                Point cameraPixelPoint(x, y, z);
+                                Point cameraLocalOrigin = Point(0,0,0);
+                                Direction cameraDirection = cameraPixelPoint - cameraLocalOrigin;
+                                Direction rayDirection = camera.cameraToWorld(cameraDirection);
+                                
+                                // Crear el rayo desde el origen de la cámara hacia el punto del píxel
+                                Ray ray(camera.origin, rayDirection.normalized());
+                                
+                                // Trazar el rayo con photon mapping recursivo
+                                Color rayColor = photonMap(ray, shapes, lights, 0, photon_map, 
+                                                        useNEE, kernelChoice, numNeighbors);
+                                
+                                // Acumular el color de este rayo
+                                total = total + rayColor;
+                            }
                             
-                            // Trazar el rayo con photon mapping recursivo
-                            Color rayColor = photonMap(ray, shapes, lights, 0, photon_map, 
-                                                       useNEE, kernelChoice, numNeighbors);
-                            
-                            // Acumular el color de este rayo
-                            total = total + rayColor;
+                            // Promediar los colores de todos los rayos
+                            Color avg = total / static_cast<double>(raysPerPixel);
+
+                            // Asignar el color promedio al píxel
+                            image.imagen[i][j] = PixelRGB(avg.r, avg.g, avg.b);
                         }
                         
-                        // Promediar los colores de todos los rayos
-                        Color avg = total / static_cast<double>(raysPerPixel);
+                        // Un hilo muestra progreso cada 10% de las filas
+                        int f = ++filasProcesadas;       // atómico, seguro
+                        if (f % (pixelHeight / 10) == 0 || f == pixelHeight - 1) {
+                            #pragma omp critical
+                            {
+                                // Obtener la hora actual
+                                auto now = std::chrono::system_clock::now();
 
-                        // Asignar el color promedio al píxel
-                        image.imagen[i][j] = PixelRGB(avg.r, avg.g, avg.b);
-                    }
-                    
-                    // Mostrar progreso cada 10% de las filas
-                    if ((i + 1) % (pixelHeight / 10) == 0 || i == pixelHeight - 1) {
-                        int progress = ((i + 1) * 100) / pixelHeight;
-                        
-                        auto now = chrono::system_clock::now();
-                        time_t now_time = chrono::system_clock::to_time_t(now);
-                        tm local_time = *localtime(&now_time);
+                                std::time_t now_time = std::chrono::system_clock::to_time_t(now);
 
-                        cout << "Progreso: " << progress << "% (" << (i + 1) << "/" << pixelHeight << " filas) - "
-                             << put_time(&local_time, "%H:%M:%S") << endl;
+                                std::tm local_time = *std::localtime(&now_time);
+
+                                cout << "Progreso: " << (f * 100) / pixelHeight << "% (" << f << "/" << pixelHeight << " filas) - "
+                                    << std::put_time(&local_time, "%H:%M:%S") << endl;
+                            }
+                        }
                     }
                 }
 

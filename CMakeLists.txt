@@ -101,6 +101,7 @@ target_link_libraries(generate_image_PM
     ray_lib
     OpenEXR::OpenEXR
     PNG::PNG
+    OpenMP::OpenMP_CXX
 )
 
 # En Windows, copiar DLLs necesarias al directorio de ejecutables

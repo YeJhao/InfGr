@@ -271,7 +271,6 @@ inline Color boxKernel(HitInfo& hit,
     // Denominador de la estimación del mapa de fotones
     float area = M_PI * maxDist * maxDist;
 
-    // TODO: Optimizar, fr y area?
     // BRDF difusa
     Color fr = hit.kd / (M_PI * pDiff);
 
