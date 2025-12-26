@@ -76,8 +76,7 @@ inline void recursive_trace_photon(const int depth,
                         const Color& flux,
                         list<Photon>& photon_list,
                         const int maxPhotonsPerLight,
-                        const bool useNEE,
-                        int& numRays
+                        const bool useNEE
     ){
     // Encontrar intersección más cercana con la geometría
     HitInfo hit = findClosestIntersection(ray, shapes, ray.o);
@@ -126,10 +125,8 @@ inline void recursive_trace_photon(const int depth,
         return; // Hemos alcanzado el número máximo de fotones por luz
     }
 
-    numRays++;
-
     // Llamada recursiva
-    recursive_trace_photon(depth + 1, newRay, shapes, throughput * flux, photon_list, maxPhotonsPerLight, useNEE, numRays);
+    recursive_trace_photon(depth + 1, newRay, shapes, throughput * flux, photon_list, maxPhotonsPerLight, useNEE);
 }
 
 inline Direction sampleDirectionFromPointLight() {
@@ -193,7 +190,7 @@ inline PhotonMap generate_photon_map(const int numPhotons,
             // - Lista de fotones donde almacenar los fotones generados
             // - Nº de fotones máximos a generar por luz
             // - Uso de Next Event Estimation
-            recursive_trace_photon(0, ray, shapes, light->intensity, photonsAux, photonsPerLight, useNEE, numRays);
+            recursive_trace_photon(0, ray, shapes, light->intensity, photonsAux, photonsPerLight, useNEE);
 
             photonsGenerated = photonsAux.size() + allPhotons.size();
             
@@ -271,8 +268,9 @@ inline Color boxKernel(HitInfo& hit,
     // Denominador de la estimación del mapa de fotones
     float area = M_PI * maxDist * maxDist;
 
-    // BRDF difusa
-    Color fr = hit.kd / (M_PI * pDiff);
+    // BRDF difusa Lambertiana: kd / π
+    // NO dividir por pDiff - eso es solo para importance sampling en path tracing
+    Color fr = hit.kd / (M_PI);
 
     for (const Photon* photon: nearestPhotons) {            
         // Contribución += BSDF * flujo del fotón / área
@@ -287,6 +285,10 @@ inline Color triangleKernel(HitInfo& hit,
                            double pDiff) {
     Color indirectLight(0, 0, 0);
 
+    if (nearestPhotons.empty()) {
+        return indirectLight;
+    }
+
     // Calculamos el radio máximo entre los k fotones más cercanos
     float maxDist = 0.0f;
     for (const Photon* photon: nearestPhotons) {
@@ -294,18 +296,23 @@ inline Color triangleKernel(HitInfo& hit,
         maxDist = max(maxDist, dist);
     }
 
-    // Denominador de la estimación del mapa de fotones
-    float area = M_PI * maxDist * maxDist;
+    if (maxDist < 1e-6f) {
+        return indirectLight;
+    }
 
-    // BRDF difusa
-    Color fr = hit.kd / (M_PI * pDiff);
+    // BRDF difusa Lambertiana: kd / π
+    Color fr = hit.kd / (M_PI);
+
+    // Para kernel triangular: normalización es (3/2) / (π*r²)
+    // porque la integral del peso triangular ∫(1-r/R) sobre el disco es 1/2
+    float normalization = (3.0f / 2.0f) / (M_PI * maxDist * maxDist);
 
     for (const Photon* photon: nearestPhotons) {            
         float dist = (photon->position_ - hit.point).norm();
         float weight = 1.0f - (dist / maxDist); // Peso del kernel triangular
 
-        // Contribución += BSDF * flujo del fotón * peso / área
-        indirectLight = indirectLight + (fr * photon->flux_ * weight / area);
+        // Contribución += BSDF * flujo del fotón * peso * normalización
+        indirectLight = indirectLight + (fr * photon->flux_ * weight * normalization);
     }
 
     return indirectLight;
@@ -313,11 +320,13 @@ inline Color triangleKernel(HitInfo& hit,
 
 inline Color gaussianKernel(HitInfo& hit,
                            const vector<const Photon*>& nearestPhotons,
-                           double pDiff) {
+                           double pDiff) 
+{
     Color indirectLight(0, 0, 0);
 
     // Calculamos el radio máximo entre los k fotones más cercanos
     float maxDist = 0.0f;
+
     for (const Photon* photon: nearestPhotons) {
         float dist = (photon->position_ - hit.point).norm();
         maxDist = max(maxDist, dist);
@@ -340,6 +349,58 @@ inline Color gaussianKernel(HitInfo& hit,
 
     return indirectLight;
 }
+/*inline Color gaussianKernel(HitInfo& hit,
+                           const vector<const Photon*>& nearestPhotons,
+                           double pDiff) {
+    Color indirectLight(0, 0, 0);
+
+    if (nearestPhotons.empty()) {
+        return indirectLight;
+    }
+
+    // Calculamos el radio máximo entre los k fotones más cercanos
+    float maxDist = 0.0f;
+    for (const Photon* photon: nearestPhotons) {
+        float dist = (photon->position_ - hit.point).norm();
+        maxDist = max(maxDist, dist);
+    }
+
+    if (maxDist < 1e-6f) {
+        return indirectLight;
+    }
+
+    // BRDF difusa Lambertiana: kd / π
+    Color fr = hit.kd / (M_PI);
+    
+    // Sigma basado en maxDist
+    float sigma = maxDist / 3.0f;
+    float sigmaSq = sigma * sigma;
+
+    // Calcular suma de pesos para normalización correcta
+    float weightSum = 0.0f;
+    for (const Photon* photon: nearestPhotons) {
+        float dist = (photon->position_ - hit.point).norm();
+        float weight = exp(-(dist * dist) / (2.0f * sigmaSq));
+        weightSum += weight;
+    }
+
+    if (weightSum < 1e-6f) {
+        return indirectLight;
+    }
+
+    // Área del disco para normalización
+    float area = M_PI * maxDist * maxDist;
+
+    for (const Photon* photon: nearestPhotons) {            
+        float dist = (photon->position_ - hit.point).norm();
+        float weight = exp(-(dist * dist) / (2.0f * sigmaSq));
+
+        // Contribución += BSDF * flujo del fotón * (peso normalizado) / área (<- area quitada)
+        indirectLight = indirectLight + (fr * photon->flux_ * (weight / weightSum));
+    }
+
+    return indirectLight;
+}*/
 
 inline void cribePhotons(GeometricShape* shape, vector<const Photon*>& photons) {
     for (const Photon* photon: photons) {
@@ -386,6 +447,7 @@ inline Color photonMap(const Ray& ray,
         // Usar Next Event Estimation para iluminación directa
         L = nextEventEstimation(hit, lights, shapes);
     }
+    // Si NO usamos NEE, la luz directa viene de los fotones de profundidad 0
 
     // ============================================
     // 2. ILUMINACIÓN INDIRECTA (Indirect Lighting)
@@ -423,7 +485,9 @@ inline Color photonMap(const Ray& ray,
             Direction newRayDir = perfectReflection(wo, hit.normal);
 
             Ray newRay(hit.point, newRayDir);
-            indirectLight = indirectLight + (photonMap(newRay, shapes, lights, depth + 1, photon_map, useNEE, kernel, k) / pSpec);
+            Color throughput = hit.ks; // Coeficiente especular
+
+            indirectLight = indirectLight + throughput * (photonMap(newRay, shapes, lights, depth + 1, photon_map, useNEE, kernel, k));
 
         } else {
             // ===== LÓBULO DE TRANSMISIÓN (Refracción) =====
@@ -455,9 +519,11 @@ inline Color photonMap(const Ray& ray,
             Direction wt = perfectRefraction(wo, effectiveNormal, iorFrom, iorTo);
             
             // Comprobar si hubo reflexión interna total
+            Color throughput = hit.kt; // Coeficiente de transmisión
             if (wt.d[0] == 0 && wt.d[1] == 0 && wt.d[2] == 0) {
                 // Reflexión interna total - usar reflexión en lugar de refracción
                 newRayDir = perfectReflection(wo, effectiveNormal);
+                throughput = Color(1, 1, 1); // Asumir que toda la energía se refleja
             } else {
                 // Refracción exitosa
                 newRayDir = wt;
@@ -465,7 +531,7 @@ inline Color photonMap(const Ray& ray,
 
             Ray newRay(hit.point, newRayDir);
 
-            indirectLight = indirectLight + (photonMap(newRay, shapes, lights, depth + 1, photon_map, useNEE, kernel, k) / pTrans);
+            indirectLight = indirectLight + throughput * (photonMap(newRay, shapes, lights, depth + 1, photon_map, useNEE, kernel, k));
         }
     }
     

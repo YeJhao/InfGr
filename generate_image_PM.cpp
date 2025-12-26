@@ -158,19 +158,10 @@ void cb_onePL_specular_spheres(vector<unique_ptr<GeometricShape>>& shapes, vecto
     shapes.push_back(make_unique<Plane>(planoDerecha));
 
     // Esferas especulares
-    Color kd(0,0,0);
-    char respuesta;
-
-    cout << "Esfera izquierda con color? (S/N): ";
-    cin >> respuesta;
-    if (respuesta == 'S' || respuesta == 's') kd = Color(0.8, 0.6, 0.9); else kd = Color(1, 1, 1);
-    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), kd, Color(0,0,0));
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.98, 0.98, 0.98), Color(0.02, 0.02, 0.02));
     shapes.push_back(make_unique<Sphere>(esferaIzquierda));
 
-    cout << "Esfera derecha con color? (S/N): ";
-    cin >> respuesta;
-    if (respuesta == 'S' || respuesta == 's') kd = Color(0.5, 0.9, 0.9); else kd = Color(1, 1, 1);
-    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), kd, Color(0,0,0));
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.98, 0.98, 0.98), Color(0.02, 0.02, 0.02));
     shapes.push_back(make_unique<Sphere>(esferaDerecha));
 
 
@@ -300,6 +291,7 @@ void cb_dielectric_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<un
     shapes.push_back(make_unique<Plane>(planoDerecha));
 
     // Esferas dieléctricas
+    // Esfera interior difusa azul
     Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.15, Color(0, 0, 0), Color(0,1,1), Color(), Color(), 1.33);
     shapes.push_back(make_unique<Sphere>(esferaIzquierda));
 
