@@ -31,8 +31,9 @@ using namespace std;
 // Variables globales
 int current_scene = 1;          // Escena actual
 int raysPerPixel = 2;         // Rayos por píxel (SPP)
-int numPhotons = 100000;        // Número de fotones para el mapa de fotones
-int numNeighbors = 50;         // Número de vecinos a considerar en el mapa de fotones
+int numPhotons = 100000;        // Número de fotones para el mapa de fotones global
+int numNeighbors = 50;         // Número de vecinos a considerar en el mapa de fotones global
+int numCausticNeighbors = 100;  // Número de vecinos para estimación de cáusticas
 
 using PhotonMap = nn::KDTree<Photon,3,PhotonAxisPositition>;
 
@@ -158,10 +159,19 @@ void cb_onePL_specular_spheres(vector<unique_ptr<GeometricShape>>& shapes, vecto
     shapes.push_back(make_unique<Plane>(planoDerecha));
 
     // Esferas especulares
-    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.98, 0.98, 0.98), Color(0.02, 0.02, 0.02));
+    Color kd(0,0,0);
+    char respuesta;
+
+    cout << "Esfera izquierda con color? (S/N): ";
+    cin >> respuesta;
+    if (respuesta == 'S' || respuesta == 's') kd = Color(0.8, 0.6, 0.9); else kd = Color(1, 1, 1);
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0,0,0), kd, Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaIzquierda));
 
-    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), Color(0.98, 0.98, 0.98), Color(0.02, 0.02, 0.02));
+    cout << "Esfera derecha con color? (S/N): ";
+    cin >> respuesta;
+    if (respuesta == 'S' || respuesta == 's') kd = Color(0.5, 0.9, 0.9); else kd = Color(1, 1, 1);
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0, 0, 0), Color(0,0,0), kd, Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaDerecha));
 
 
@@ -291,7 +301,6 @@ void cb_dielectric_spheres(vector<unique_ptr<GeometricShape>>& shapes, vector<un
     shapes.push_back(make_unique<Plane>(planoDerecha));
 
     // Esferas dieléctricas
-    // Esfera interior difusa azul
     Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.15, Color(0, 0, 0), Color(0,1,1), Color(), Color(), 1.33);
     shapes.push_back(make_unique<Sphere>(esferaIzquierda));
 
@@ -343,6 +352,37 @@ void cb_plastic_dielectric(vector<unique_ptr<GeometricShape>>& shapes, vector<un
     lights.push_back(make_unique<PointLight>(light));
 }
 
+// Cornell box con luz de área y esfera izquierda plastica y derecha dieléctrica
+void cb_top_AL_plastic_dielectric(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights){
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    // Esferas dieléctricas
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0,0,0), Color(0.65, 0.45, 0.75), Color(0.15, 0.15, 0.15), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaIzquierda));
+
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0,0,0), Color(0,0,0), Color(0.02, 0.02, 0.02), Color(0.98, 0.98, 0.98), 1.5);
+    shapes.push_back(make_unique<Sphere>(esferaDerecha));
+
+    
+    // LUZ ÁREA
+    Plane areaLight(Direction(0, -1, 0), 1, Color(0.9, 0.9, 0.9), Color(0,0,0), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(areaLight));
+}
+
 // Cornell box para color bleeding
 void color_bleeding_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
     shapes.clear();
@@ -374,6 +414,94 @@ void color_bleeding_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<uni
     //lights.push_back(make_unique<PointLight>(light));
 }
 
+// Cornell Box básica con luz puntual arriba y una esfera, donde se percibe sombras duras
+void hard_shadow_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    Plane planoArriba(Direction(0, -1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoArriba));
+
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    Sphere esfera(Point(0, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.8, 0.6, 0.9), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esfera));
+
+
+    // LUZ PUNTUAL
+    PointLight light(Point(0, 0.5, 0), Color(1, 1, 1));
+    lights.push_back(make_unique<PointLight>(light));
+}
+
+// Cornell Box básica con luz puntual arriba y una esfera, donde se percibe sombras suaves
+void soft_shadow_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    Sphere esfera(Point(0, -0.7, 0.25), 0.3, Color(0, 0, 0), Color(0.8, 0.6, 0.9), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esfera));
+
+
+    // LUZ ÁREA
+    Plane areaLight(Direction(0, -1, 0), 1, Color(0.9, 0.9, 0.9), Color(0,0,0), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(areaLight));
+}
+
+// Cornell box con luz puntual y esfera dieléctrica, para ver caústicas
+void caustics_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights){
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    Plane planoArriba(Direction(0, -1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoArriba));
+
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    // Esferas dieléctricas
+    Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0,0,0), Color(0,0,0), Color(0.02, 0.02, 0.02), Color(0.98, 0.98, 0.98), 1.5);
+    shapes.push_back(make_unique<Sphere>(esferaDerecha));
+
+
+    // LUZ PUNTUAL
+    PointLight light(Point(0, 0.5, 0), Color(1, 1, 1));
+    lights.push_back(make_unique<PointLight>(light));
+}
+
 
 int main() {
     cout << "Tamaño de la imagen (anchura altura): ";
@@ -401,10 +529,11 @@ int main() {
         cout << "7.  Paredes especulares" << endl;
         cout << "8.  Esferas dieléctricas" << endl;
         cout << "9.  Esferas plástica y dieléctrica" << endl;
-        cout << "10. Color Bleeding" << endl;
-        cout << "11. Sombras duras" << endl;
-        cout << "12. Sombras suaves" << endl;
-        cout << "13. Caústicas" << endl;
+        cout << "10. Esferas plástica y dieléctrica, con luz de área" << endl;
+        cout << "11. Color Bleeding" << endl;
+        cout << "12. Sombras duras" << endl;
+        cout << "13. Sombras suaves" << endl;
+        cout << "14. Caústicas" << endl;
         cout << "\n22. Generar imagen" << endl;
         cout << "0. Salir" << endl;
         cout << "Selecciona una opción: ";
@@ -474,8 +603,36 @@ int main() {
 
             case 10: {
                 if (current_scene == 10) break;
-                color_bleeding_scene(shapes, lights);
+                cb_top_AL_plastic_dielectric(shapes, lights);
                 current_scene = 10;
+                break;
+            }
+
+            case 11: {
+                if (current_scene == 11) break;
+                color_bleeding_scene(shapes, lights);
+                current_scene = 11;
+                break;
+            }
+
+            case 12: {
+                if (current_scene == 11) break;
+                hard_shadow_scene(shapes, lights);
+                current_scene = 12;
+                break;
+            }
+
+            case 13: {
+                if (current_scene == 11) break;
+                soft_shadow_scene(shapes, lights);
+                current_scene = 12;
+                break;
+            }
+
+            case 14: {
+                if (current_scene == 14) break;
+                caustics_scene(shapes, lights);
+                current_scene = 14;
                 break;
             }
 
@@ -502,7 +659,7 @@ int main() {
                     }
                 }
 
-                cout << "Número de fotones a generar (actual " << numPhotons << ", presiona Enter para mantener): ";
+                cout << "Número de fotones GLOBALES a generar (actual " << numPhotons << ", presiona Enter para mantener): ";
                 string numPhotonsInput;
                 getline(cin, numPhotonsInput);
                 if (!numPhotonsInput.empty()) {
@@ -512,13 +669,13 @@ int main() {
                             numPhotons = newNumPhotons;
                         }
                     } catch (const exception&) {
-                        cout << "Entrada inválida, manteniendo número de fotones actual." << endl;
+                        cout << "Entrada inválida, manteniendo número de fotones globales actual." << endl;
                     }
                 }
 
-                numNeighbors = static_cast<int>(numPhotons * 0.01); // Valor recomendado por defecto
+                numNeighbors = static_cast<int>(numPhotons * 0.007); // Valor recomendado por defecto
 
-                cout << "Número de vecinos (k) para estimación, ";
+                cout << "Número de vecinos (k) para GLOBALES, ";
                 cout << "(recomendado y actual " << numNeighbors << ", presiona Enter para mantener): ";
                 string numNeighborsInput;
                 getline(cin, numNeighborsInput);
@@ -529,7 +686,24 @@ int main() {
                             numNeighbors = newNumNeighbors;
                         }
                     } catch (const exception&) {
-                        cout << "Entrada inválida, manteniendo número de vecinos actual." << endl;
+                        cout << "Entrada inválida, manteniendo número de vecinos globales actual." << endl;
+                    }
+                }
+
+                numCausticNeighbors = static_cast<int>(numPhotons * 0.003); // Valor recomendado
+
+                cout << "Número de vecinos (k) para CÁUSTICAS, ";
+                cout << "(recomendado y actual " << numCausticNeighbors << ", presiona Enter para mantener): ";
+                string numCausticNeighborsInput;
+                getline(cin, numCausticNeighborsInput);
+                if (!numCausticNeighborsInput.empty()) {
+                    try {
+                        int newNumCausticNeighbors = stoi(numCausticNeighborsInput);
+                        if (newNumCausticNeighbors > 0) {
+                            numCausticNeighbors = newNumCausticNeighbors;
+                        }
+                    } catch (const exception&) {
+                        cout << "Entrada inválida, manteniendo número de vecinos de cáusticas actual." << endl;
                     }
                 }
 
@@ -556,8 +730,9 @@ int main() {
 
                 cout << "\n=== GENERANDO IMAGEN ===" << endl;
                 cout << "Parámetros:" << endl;
-                cout << "  - Fotones generados: " << numPhotons << endl;
-                cout << "  - K vecinos para estimación: " << numNeighbors << endl;
+                cout << "  - Fotones GLOBALES: " << numPhotons << endl;
+                cout << "  - K vecinos para globales: " << numNeighbors << endl;
+                cout << "  - K vecinos para cáusticas: " << numCausticNeighbors << endl;
                 cout << "  - Caminos por píxel (SPP): " << raysPerPixel << endl;
                 cout << "  - Next Event Estimation: " << (useNEE ? "Sí" : "No") << endl;
                 cout << "  - Kernel: ";
@@ -584,10 +759,14 @@ int main() {
                 atomic<int> filasProcesadas = 0;
 
                 // Paso 1: Generar mapa de fotones lanzando rayos desde la cámara
-                cout << "\n--- PASO 1: Generando mapa de fotones ---" << endl;
+                cout << "\n--- PASO 1: Generando mapas de fotones ---" << endl;
                 auto photon_start = chrono::high_resolution_clock::now();
 
-                PhotonMap photon_map = generate_photon_map(numPhotons, shapes, lights, useNEE);
+                PhotonMap global_map, caustic_map;
+
+                pair<PhotonMap, PhotonMap> maps = generate_photon_map(numPhotons, shapes, lights, useNEE);
+                global_map = maps.first;
+                caustic_map = maps.second;
 
                 auto photon_end = chrono::high_resolution_clock::now();
                 chrono::duration<double> photon_duration = photon_end - photon_start;
@@ -637,7 +816,7 @@ int main() {
                                 Ray ray(camera.origin, rayDirection.normalized());
                                 
                                 // Trazar el rayo con photon mapping recursivo
-                                Color rayColor = photonMap(ray, shapes, lights, 0, photon_map, 
+                                Color rayColor = photonMap(ray, shapes, lights, 0, global_map, caustic_map, 
                                                         useNEE, kernelChoice, numNeighbors);
                                 
                                 // Acumular el color de este rayo

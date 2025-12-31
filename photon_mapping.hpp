@@ -19,11 +19,8 @@ using namespace std;
 
 // Variables de configuración
 #define PHOTON_MIN_DEPTH 2
-
-// Tipo de kernel para estimación del mapa de fotones
-//      0 - Caja
-//      1 - Triangulo
-//      2 - Gaussiano
+#define ALPHA 0.918
+#define BETA 1.953
 
 // Variables globales
 mt19937 gen(random_device{}());
@@ -37,11 +34,13 @@ class Photon {
         Direction direction_;   // Dirección incidente del fotón
         Color flux_;            // Flujo (potencia) del fotón
 
-        int prof_;
+        int prof_;              // Profundidad del fotón en el trazado
+        bool isCaustic_;        // Indica si el fotón es parte de una cáustica
 
         float position(size_t i) const { 
             return static_cast<float>(position_.coords(i)); 
-        }};
+        }
+};
 
 struct PhotonAxisPositition {
     float operator()(const Photon& p, size_t i) const {
@@ -76,7 +75,8 @@ inline void recursive_trace_photon(const int depth,
                         const Color& flux,
                         list<Photon>& photon_list,
                         const int maxPhotonsPerLight,
-                        const bool useNEE
+                        const bool useNEE,
+                        bool hasBouncedonDelta = false
     ){
     // Encontrar intersección más cercana con la geometría
     HitInfo hit = findClosestIntersection(ray, shapes, ray.o);
@@ -91,6 +91,7 @@ inline void recursive_trace_photon(const int depth,
             Photon photon;
             photon.position_ = hit.point;     
             photon.direction_ = ray.d; // Dirección incidente
+            photon.isCaustic_ = hasBouncedonDelta;
             photon.flux_ = flux;
             photon.prof_ = depth;
             photon_list.push_back(photon);
@@ -125,8 +126,12 @@ inline void recursive_trace_photon(const int depth,
         return; // Hemos alcanzado el número máximo de fotones por luz
     }
 
+    // Marcar que rebotó en delta si no es difuso
+    bool nextHasBounced = hasBouncedonDelta || (hit.kt.r > 0 || hit.kt.g > 0 || hit.kt.b > 0);
+
     // Llamada recursiva
-    recursive_trace_photon(depth + 1, newRay, shapes, throughput * flux, photon_list, maxPhotonsPerLight, useNEE);
+    recursive_trace_photon(depth + 1, newRay, shapes, throughput * flux, 
+                           photon_list, maxPhotonsPerLight, useNEE, nextHasBounced);
 }
 
 inline Direction sampleDirectionFromPointLight() {
@@ -157,7 +162,7 @@ inline void calculatePhotonsFlux(const int numRays,
     }
 }
 
-inline PhotonMap generate_photon_map(const int numPhotons,
+inline pair<PhotonMap, PhotonMap> generate_photon_map(const int numPhotons,
                         const vector<unique_ptr<GeometricShape>>& shapes,
                         const vector<unique_ptr<PointLight>>& lights,
                         const bool useNEE
@@ -216,13 +221,29 @@ inline PhotonMap generate_photon_map(const int numPhotons,
         // Añadir los fotones generados por esta luz a la lista global
         allPhotons.insert(allPhotons.end(), photonsAux.begin(), photonsAux.end());
     }
+
+    // Separar fotones
+    list<Photon> causticPhotons;
+    list<Photon> globalPhotons;
+    
+    for (const auto& photon: allPhotons) {
+        if (photon.isCaustic_) {
+            causticPhotons.push_back(photon);
+        } else {
+            globalPhotons.push_back(photon);
+        }
+    }
+    
+    cout << "Fotones de cáusticas: " << causticPhotons.size() << endl;
+    cout << "Fotones globales: " << globalPhotons.size() << endl;
     cout << "Total de fotones almacenados en el mapa: " << allPhotons.size() << endl;
     cout << "Algun foton de prof 0?: " << (any_of(allPhotons.begin(), allPhotons.end(), [](const Photon& p){ return p.prof_ == 0; }) ? "Sí" : "No") << endl;
 
-    // Crear el mapa de fotones con la lista de fotones generada
-    PhotonMap photon_map(allPhotons, PhotonAxisPositition());
-
-    return photon_map;
+    // Crear los mapas de fotones
+    PhotonMap caustic_map(causticPhotons, PhotonAxisPositition());
+    PhotonMap global_map(globalPhotons, PhotonAxisPositition());
+    
+    return {caustic_map, global_map};
 }
 
 inline Color nextEventEstimation(const HitInfo& hit,
@@ -258,6 +279,10 @@ inline Color boxKernel(HitInfo& hit,
                        double pDiff) {
     Color indirectLight(0, 0, 0);
 
+    if (nearestPhotons.empty()) {
+        return indirectLight;
+    }
+
     // Calculamos el radio máximo entre los k fotones más cercanos
     float maxDist = 0.0f;
     for (const Photon* photon: nearestPhotons) {
@@ -268,13 +293,19 @@ inline Color boxKernel(HitInfo& hit,
     // Denominador de la estimación del mapa de fotones
     float area = M_PI * maxDist * maxDist;
 
-    // BRDF difusa Lambertiana: kd / π
-    // NO dividir por pDiff - eso es solo para importance sampling en path tracing
-    Color fr = hit.kd / (M_PI);
+    // BRDF difusa
+    Color fr(0, 0, 0);
+    fr = hit.kd / (M_PI * pDiff);
 
-    for (const Photon* photon: nearestPhotons) {            
-        // Contribución += BSDF * flujo del fotón / área
-        indirectLight = indirectLight + (fr * photon->flux_ / area);
+    for (const Photon* photon: nearestPhotons) {
+        // Dirección del fotón (incidente)
+        Direction wi = photon->direction_ * (-1.0); // Invertir para obtener dirección hacia la luz
+        
+        // Factor geométrico (coseno del ángulo de incidencia)
+        double cosTheta = max(0.0, hit.normal.dot(wi));
+        
+        // Contribución += BSDF * cosTheta * flujo del fotón / área
+        indirectLight = indirectLight + (fr * cosTheta * photon->flux_ / area);
     }
 
     return indirectLight;
@@ -282,7 +313,8 @@ inline Color boxKernel(HitInfo& hit,
 
 inline Color triangleKernel(HitInfo& hit,
                            const vector<const Photon*>& nearestPhotons,
-                           double pDiff) {
+                           double pDiff,
+                           const float k = 1.0f) {
     Color indirectLight(0, 0, 0);
 
     if (nearestPhotons.empty()) {
@@ -296,24 +328,25 @@ inline Color triangleKernel(HitInfo& hit,
         maxDist = max(maxDist, dist);
     }
 
-    if (maxDist < 1e-6f) {
-        return indirectLight;
-    }
+    // BRDF difusa
+    Color fr(0, 0, 0);
+    fr = hit.kd / (M_PI * pDiff);
 
-    // BRDF difusa Lambertiana: kd / π
-    Color fr = hit.kd / (M_PI);
-
-    // Para kernel triangular: normalización es (3/2) / (π*r²)
-    // porque la integral del peso triangular ∫(1-r/R) sobre el disco es 1/2
-    float normalization = (3.0f / 2.0f) / (M_PI * maxDist * maxDist);
-
-    for (const Photon* photon: nearestPhotons) {            
+    for (const Photon* photon: nearestPhotons) {
+        // Dirección del fotón (incidente)
+        Direction wi = photon->direction_ * (-1.0);
+                
+        double cosTheta = max(0.0, hit.normal.dot(wi));
+        
         float dist = (photon->position_ - hit.point).norm();
-        float weight = 1.0f - (dist / maxDist); // Peso del kernel triangular
+        float weight = 1.0f - (dist / (maxDist*k));
 
-        // Contribución += BSDF * flujo del fotón * peso * normalización
-        indirectLight = indirectLight + (fr * photon->flux_ * weight * normalization);
+        indirectLight = indirectLight + (fr * cosTheta * photon->flux_ * weight);
     }
+
+    // Normalización
+    float normalization = (1 - (2.0f / (3.0f * k))) * M_PI * maxDist * maxDist;
+    indirectLight = indirectLight / normalization;
 
     return indirectLight;
 }
@@ -324,6 +357,10 @@ inline Color gaussianKernel(HitInfo& hit,
 {
     Color indirectLight(0, 0, 0);
 
+    if (nearestPhotons.empty()) {
+        return indirectLight;
+    }
+
     // Calculamos el radio máximo entre los k fotones más cercanos
     float maxDist = 0.0f;
 
@@ -332,19 +369,20 @@ inline Color gaussianKernel(HitInfo& hit,
         maxDist = max(maxDist, dist);
     }
 
-    // Denominador de la estimación del mapa de fotones
-    float area = M_PI * maxDist * maxDist;
-
     // BRDF difusa
-    Color fr = hit.kd / (M_PI * pDiff);
-    float sigma = maxDist / 3;
+    Color fr(0, 0, 0);
+    fr = hit.kd / (M_PI * pDiff);
 
-    for (const Photon* photon: nearestPhotons) {            
+    for (const Photon* photon: nearestPhotons) {
+        // Dirección del fotón (incidente)
+        Direction wi = photon->direction_ * (-1.0);
+        
+        double cosTheta = max(0.0, hit.normal.dot(wi));
+        
         float dist = (photon->position_ - hit.point).norm();
-        float weight = exp(-(dist * dist) / (2 * sigma * sigma)); // Peso del kernel gaussiano
+        float weight = ALPHA * (1 - ((1-exp(-BETA*dist*dist/(2*maxDist*maxDist)))/(1-exp(-BETA))));
 
-        // Contribución += BSDF * flujo del fotón * peso / área
-        indirectLight = indirectLight + (fr * photon->flux_ * weight / (sqrt(2*M_PI) * sigma * area));
+        indirectLight = indirectLight + (fr * cosTheta * photon->flux_ * weight);
     }
 
     return indirectLight;
@@ -414,10 +452,12 @@ inline Color photonMap(const Ray& ray,
                        const vector<unique_ptr<GeometricShape>>& shapes,
                        const vector<unique_ptr<PointLight>>& lights,
                        int depth,
-                       const PhotonMap& photon_map,
+                       const PhotonMap& global_map,
+                       const PhotonMap& caustic_map,
                        const bool useNEE,
                        const int kernel,
-                       const int k = 50) 
+                       const int k_caustic = 100,     // Más fotones para cáusticas
+                       const int k_global = 50) 
 {
     // Límite de seguridad (por si acaso)
     if (depth >= MAX_BOUNCES) {
@@ -457,26 +497,38 @@ inline Color photonMap(const Ray& ray,
 
     // Solo calculada cuando el material es no delta (tiene valores != 0 en la componente difusa)
     Color indirectLight(0, 0, 0);
-    if (isNonDeltaMaterial(hit)) {
+    if (isNonDeltaMaterial(hit)) {        
         array<float, 3> queryPoint = pointToArray(hit.point);
-        vector<const Photon*> nearestPhotons = photon_map.nearest_neighbors(queryPoint, k);
+        
+        // Cáusticas (más fotones, área más pequeña)
+        vector<const Photon*> causticPhotons = caustic_map.nearest_neighbors(queryPoint, k_caustic);        
+        // Global (menos fotones, área más grande)
+        vector<const Photon*> globalPhotons = global_map.nearest_neighbors(queryPoint, k_global);
 
-        cribePhotons(hit.shape, nearestPhotons);
+        Color causticContrib, globalContrib;
+
+        cribePhotons(hit.shape, globalPhotons);
+        cribePhotons(hit.shape, causticPhotons);
 
         switch (kernel) {
             case 1: // Caja
-                indirectLight = boxKernel(hit, nearestPhotons, pDiff);
+                causticContrib = boxKernel(hit, causticPhotons, pDiff);
+                globalContrib = boxKernel(hit, globalPhotons, pDiff);
+                indirectLight = causticContrib + globalContrib;
                 break;
             case 2: // Triángulo
-                indirectLight = triangleKernel(hit, nearestPhotons, pDiff);
+                causticContrib = triangleKernel(hit, causticPhotons, pDiff);
+                globalContrib = triangleKernel(hit, globalPhotons, pDiff);
+                indirectLight = causticContrib + globalContrib;
                 break;
             case 3: // Gaussiano
-                indirectLight = gaussianKernel(hit, nearestPhotons, pDiff);
+                causticContrib = gaussianKernel(hit, causticPhotons, pDiff);
+                globalContrib = gaussianKernel(hit, globalPhotons, pDiff);
+                indirectLight = causticContrib + globalContrib;
                 break;
             default:
                 break;
         }
-
     } else {
         double rrValue = dis0(gen);
         if (rrValue < pSpec) {
@@ -485,20 +537,27 @@ inline Color photonMap(const Ray& ray,
             Direction newRayDir = perfectReflection(wo, hit.normal);
 
             Ray newRay(hit.point, newRayDir);
-            Color throughput = hit.ks; // Coeficiente especular
+            //Color throughput = hit.ks; // Coeficiente especular
 
-            indirectLight = indirectLight + throughput * (photonMap(newRay, shapes, lights, depth + 1, photon_map, useNEE, kernel, k));
+            indirectLight = indirectLight + 
+                            hit.ks * photonMap(newRay, shapes, lights, depth + 1, global_map, caustic_map, 
+                                               useNEE, kernel, k_caustic, k_global);
 
         } else {
             // ===== LÓBULO DE TRANSMISIÓN (Refracción) =====
             Direction wo = ray.d * (-1.0); // Dirección hacia afuera
             Direction newRayDir;
+
             // Determinar si estamos entrando o saliendo del objeto
             // Si n·wo > 0, el rayo viene del exterior (entrando)
             // Si n·wo < 0, el rayo viene del interior (saliendo)
             double cosTheta = hit.normal.dot(wo);
             
-            // IORs por defecto (estos valores deberían venir de las geometrías en el futuro)
+            // NOTA: Esta implementación asume transiciones aire ↔ material.
+            // LIMITACIÓN: No maneja correctamente objetos dieléctricos anidados
+            // (ej: esfera de vidrio dentro de otra esfera de vidrio).
+            // Para soportar anidamiento, se necesitaría un stack de IORs que 
+            // trackee los materiales atravesados en el camino del rayo.
             double iorFrom, iorTo;
             Direction effectiveNormal;
             
@@ -519,19 +578,20 @@ inline Color photonMap(const Ray& ray,
             Direction wt = perfectRefraction(wo, effectiveNormal, iorFrom, iorTo);
             
             // Comprobar si hubo reflexión interna total
-            Color throughput = hit.kt; // Coeficiente de transmisión
+            //Color throughput = hit.kt; // Coeficiente de transmisión
+            // Refracción exitosa
+            newRayDir = wt;
             if (wt.d[0] == 0 && wt.d[1] == 0 && wt.d[2] == 0) {
                 // Reflexión interna total - usar reflexión en lugar de refracción
                 newRayDir = perfectReflection(wo, effectiveNormal);
-                throughput = Color(1, 1, 1); // Asumir que toda la energía se refleja
-            } else {
-                // Refracción exitosa
-                newRayDir = wt;
+                //throughput = Color(0,0,0); // Asumir que toda la energía se refleja
             }
 
             Ray newRay(hit.point, newRayDir);
 
-            indirectLight = indirectLight + throughput * (photonMap(newRay, shapes, lights, depth + 1, photon_map, useNEE, kernel, k));
+            indirectLight = indirectLight + 
+                            hit.kt * photonMap(newRay, shapes, lights, depth + 1, global_map, caustic_map, 
+                                               useNEE, kernel, k_caustic, k_global);
         }
     }
     
