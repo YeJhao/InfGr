@@ -496,6 +496,10 @@ void caustics_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_pt
     Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0,0,0), Color(0,0,0), Color(0.02, 0.02, 0.02), Color(0.98, 0.98, 0.98), 1.5);
     shapes.push_back(make_unique<Sphere>(esferaDerecha));
 
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0,0,0), Color(0,0,0), 
+                           Color(0.96, 0.96, 0.96), Color(0.04, 0.04, 0.04), 1.33);
+    shapes.push_back(make_unique<Sphere>(esferaIzquierda));
+
 
     // LUZ PUNTUAL
     PointLight light(Point(0, 0.5, 0), Color(1, 1, 1));

@@ -299,7 +299,7 @@ inline Color boxKernel(HitInfo& hit,
 
     for (const Photon* photon: nearestPhotons) {
         // Dirección del fotón (incidente)
-        Direction wi = photon->direction_ * (-1.0); // Invertir para obtener dirección hacia la luz
+        Direction wi = photon->direction_ * (-1.0); // Invertir para obtener dirección que nos interesa
         
         // Factor geométrico (coseno del ángulo de incidencia)
         double cosTheta = max(0.0, hit.normal.dot(wi));
@@ -387,58 +387,6 @@ inline Color gaussianKernel(HitInfo& hit,
 
     return indirectLight;
 }
-/*inline Color gaussianKernel(HitInfo& hit,
-                           const vector<const Photon*>& nearestPhotons,
-                           double pDiff) {
-    Color indirectLight(0, 0, 0);
-
-    if (nearestPhotons.empty()) {
-        return indirectLight;
-    }
-
-    // Calculamos el radio máximo entre los k fotones más cercanos
-    float maxDist = 0.0f;
-    for (const Photon* photon: nearestPhotons) {
-        float dist = (photon->position_ - hit.point).norm();
-        maxDist = max(maxDist, dist);
-    }
-
-    if (maxDist < 1e-6f) {
-        return indirectLight;
-    }
-
-    // BRDF difusa Lambertiana: kd / π
-    Color fr = hit.kd / (M_PI);
-    
-    // Sigma basado en maxDist
-    float sigma = maxDist / 3.0f;
-    float sigmaSq = sigma * sigma;
-
-    // Calcular suma de pesos para normalización correcta
-    float weightSum = 0.0f;
-    for (const Photon* photon: nearestPhotons) {
-        float dist = (photon->position_ - hit.point).norm();
-        float weight = exp(-(dist * dist) / (2.0f * sigmaSq));
-        weightSum += weight;
-    }
-
-    if (weightSum < 1e-6f) {
-        return indirectLight;
-    }
-
-    // Área del disco para normalización
-    float area = M_PI * maxDist * maxDist;
-
-    for (const Photon* photon: nearestPhotons) {            
-        float dist = (photon->position_ - hit.point).norm();
-        float weight = exp(-(dist * dist) / (2.0f * sigmaSq));
-
-        // Contribución += BSDF * flujo del fotón * (peso normalizado) / área (<- area quitada)
-        indirectLight = indirectLight + (fr * photon->flux_ * (weight / weightSum));
-    }
-
-    return indirectLight;
-}*/
 
 inline void cribePhotons(GeometricShape* shape, vector<const Photon*>& photons) {
     for (const Photon* photon: photons) {
@@ -537,11 +485,10 @@ inline Color photonMap(const Ray& ray,
             Direction newRayDir = perfectReflection(wo, hit.normal);
 
             Ray newRay(hit.point, newRayDir);
-            //Color throughput = hit.ks; // Coeficiente especular
 
             indirectLight = indirectLight + 
-                            hit.ks * photonMap(newRay, shapes, lights, depth + 1, global_map, caustic_map, 
-                                               useNEE, kernel, k_caustic, k_global);
+                           (photonMap(newRay, shapes, lights, depth + 1, global_map, caustic_map, 
+                                               useNEE, kernel, k_caustic, k_global) * pSpec);
 
         } else {
             // ===== LÓBULO DE TRANSMISIÓN (Refracción) =====
@@ -590,8 +537,8 @@ inline Color photonMap(const Ray& ray,
             Ray newRay(hit.point, newRayDir);
 
             indirectLight = indirectLight + 
-                            hit.kt * photonMap(newRay, shapes, lights, depth + 1, global_map, caustic_map, 
-                                               useNEE, kernel, k_caustic, k_global);
+                            (photonMap(newRay, shapes, lights, depth + 1, global_map, caustic_map, 
+                                               useNEE, kernel, k_caustic, k_global) /*/ pTrans*/);
         }
     }
     
