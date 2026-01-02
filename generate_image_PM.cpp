@@ -506,6 +506,46 @@ void caustics_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_pt
     lights.push_back(make_unique<PointLight>(light));
 }
 
+// Cornell Box con 3 esferas a diferentes profundidades para demostrar Depth of Field
+void dof_three_spheres_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    Plane planoArriba(Direction(0, -1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoArriba));
+
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    // TRES ESFERAS A DIFERENTES PROFUNDIDADES (z diferente)    
+    // Esfera CERCANA (más cerca de la cámara) - Roja/Magenta
+    Sphere esferaCercana(Point(-0.25, -0.25, -1), 0.25, Color(0, 0, 0), Color(0.9, 0.3, 0.5), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaCercana));
+    
+    // Esfera MEDIA (en el centro) - Verde/Cian
+    Sphere esferaCentro(Point(0, -0.25, 0.0), 0.25, Color(0, 0, 0), Color(0.3, 0.9, 0.7), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaCentro));
+    
+    // Esfera LEJANA (más cerca del fondo) - Azul/Violeta
+    Sphere esferaLejana(Point(0.25, -0.25, 1), 0.25, Color(0, 0, 0), Color(0.4, 0.5, 0.9), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaLejana));
+
+
+    // LUZ PUNTUAL
+    PointLight light(Point(0, 0.7, 0), Color(1, 1, 1));
+    lights.push_back(make_unique<PointLight>(light));
+}
+
 
 int main() {
     cout << "Tamaño de la imagen (anchura altura): ";
@@ -538,6 +578,7 @@ int main() {
         cout << "12. Sombras duras" << endl;
         cout << "13. Sombras suaves" << endl;
         cout << "14. Caústicas" << endl;
+        cout << "15. Depth of Field - 3 esferas a diferentes profundidades" << endl;
         cout << "\n22. Generar imagen" << endl;
         cout << "0. Salir" << endl;
         cout << "Selecciona una opción: ";
@@ -640,6 +681,13 @@ int main() {
                 break;
             }
 
+            case 15: {
+                if (current_scene == 15) break;
+                dof_three_spheres_scene(shapes, lights);
+                current_scene = 15;
+                break;
+            }
+
             // Generar imagen con cámara configurable
             case 22: {
                 if (shapes.empty()) {
@@ -720,7 +768,6 @@ int main() {
                 int kernelChoice;
                 cin >> kernelChoice;
 
-                // Guardar la imagen
                 cout << "\nNombre de la imagen (sin extensión): ";
                 string nameInput;
                 cin >> nameInput;
@@ -728,9 +775,34 @@ int main() {
                 
                 cout << "\n=== CONFIGURACIÓN DE CÁMARA ===" << endl;
                 
-                // Configurar cámara
+                // Preguntar si usar profundidad de campo
+                cout << "¿Usar profundidad de campo (DoF)? (s/n): ";
+                string dofInput;
+                cin >> dofInput;
+                bool useDoF = (dofInput == "s" || dofInput == "S");
+                
                 Camera camera(Point(0, 0, -3.5), Direction(-1,0,0), Direction(0,1,0), Direction(0,0,3));
-                cout << "Cámara configurada en origen (0,0,-3.5) con vectores <l=(-1,0,0), u=(0,1,0), f=(0,0,3)>." << endl;
+                
+                if (useDoF) {
+                    cout << "Radio de apertura (ej. 0.1): ";
+                    double apertureRadius;
+                    cin >> apertureRadius;
+                    
+                    cout << "Distancia focal (distancia al plano enfocado, ej. 3.5): ";
+                    double focalDistance;
+                    cin >> focalDistance;
+                    
+                    camera = Camera(Point(0, 0, -3.5), Direction(-1,0,0), Direction(0,1,0), 
+                                   Direction(0,0,3), apertureRadius, focalDistance);
+                    
+                    cout << "Cámara con DoF configurada:" << endl;
+                    cout << "  - Origen: (0,0,-3.5)" << endl;
+                    cout << "  - Radio apertura: " << apertureRadius << endl;
+                    cout << "  - Distancia focal: " << focalDistance << endl;
+                    cout << "  - Longitud focal calculada: " << camera.focalLength << endl;
+                } else {
+                    cout << "Cámara pinhole configurada en origen (0,0,-3.5) con vectores <l=(-1,0,0), u=(0,1,0), f=(0,0,3)>." << endl;
+                }
 
                 cout << "\n=== GENERANDO IMAGEN ===" << endl;
                 cout << "Parámetros:" << endl;
@@ -810,14 +882,47 @@ int main() {
                                 double y = pixelMinY + dis(gen) * pixelSizeY;
                                 double z = 1; // Plano de imagen en z=1 en coordenadas de cámara
                                 
-                                // Convertir punto del plano de imagen de coordenadas de cámara a mundo
-                                Point cameraPixelPoint(x, y, z);
-                                Point cameraLocalOrigin = Point(0,0,0);
-                                Direction cameraDirection = cameraPixelPoint - cameraLocalOrigin;
-                                Direction rayDirection = camera.cameraToWorld(cameraDirection);
+                                Point rayOrigin;
+                                Direction rayDirection;
                                 
-                                // Crear el rayo desde el origen de la cámara hacia el punto del píxel
-                                Ray ray(camera.origin, rayDirection.normalized());
+                                if (camera.apertureRadius > 0.0) {
+                                    // CÁMARA CON PROFUNDIDAD DE CAMPO
+                                    
+                                    // 1. Calcular la dirección hacia el píxel
+                                    Direction pixelDirection(x, y, z);
+                                    
+                                    // 2. El punto focal está a focalDistance en la dirección del píxel
+                                    // Esta es la distancia que el usuario especificó como "distancia al plano enfocado"
+                                    Point focalPoint = Point(0,0,0) + pixelDirection.normalized() * camera.focalDistance;
+                                    
+                                    // 3. Muestrear un punto aleatorio en la apertura circular
+                                    // Muestreo uniforme en disco usando el método de Shirley
+                                    double r = camera.apertureRadius * sqrt(dis(gen));
+                                    double theta = 2.0 * M_PI * dis(gen);
+                                    double aperture_x = r * cos(theta);
+                                    double aperture_y = r * sin(theta);
+                                    
+                                    // Punto de origen en coordenadas de cámara (la apertura está en z=0)
+                                    Point cameraOrigin(aperture_x, aperture_y, 0.0);
+                                    
+                                    // 4. La dirección del rayo va desde el punto en la apertura al punto focal
+                                    Direction cameraDirection = focalPoint - cameraOrigin;
+                                    
+                                    // 5. Transformar al espacio mundo
+                                    rayOrigin = camera.cameraToWorld(cameraOrigin);
+                                    rayDirection = camera.cameraToWorld(cameraDirection);
+                                    
+                                } else {
+                                    // CÁMARA PINHOLE (sin profundidad de campo)
+                                    Point cameraPixelPoint(x, y, z);
+                                    Point cameraLocalOrigin = Point(0,0,0);
+                                    Direction cameraDirection = cameraPixelPoint - cameraLocalOrigin;
+                                    rayDirection = camera.cameraToWorld(cameraDirection);
+                                    rayOrigin = camera.origin;
+                                }
+                                
+                                // Crear el rayo 
+                                Ray ray(rayOrigin, rayDirection.normalized());
                                 
                                 // Trazar el rayo con photon mapping recursivo
                                 Color rayColor = photonMap(ray, shapes, lights, 0, global_map, caustic_map, 

@@ -68,8 +68,18 @@ class Camera {
         Direction l, u, f; // Vectores base de la cámara (l=left, u=up, f=forward)
         Matrix4d transformation_matrix;
         Matrix4d inverse_transformation_matrix;
+        
+        // Parámetros para profundidad de campo
+        double apertureRadius;  // Radio de la apertura (0 = pinhole)
+        double focalLength;     // Longitud focal de la lente
+        double focalDistance;   // Distancia al plano enfocado (v en ecuación de lente delgada)
 
+        // Constructor sin profundidad de campo (pinhole)
         Camera(const Point& origin_, const Direction& l_, const Direction& u_, const Direction& f_);
+        
+        // Constructor con profundidad de campo
+        Camera(const Point& origin_, const Direction& l_, const Direction& u_, const Direction& f_,
+               double apertureRadius_, double focalDistance_);
         
         Direction cameraToWorld(const Direction& cameraDir) const;
         Direction worldToCamera(const Direction& worldDir) const;

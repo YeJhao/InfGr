@@ -96,9 +96,30 @@ std::ostream& operator<<(std::ostream& os, const Direction& dir) {
     return os;
 }
 
-// Constructor de Camera
+// Constructor de Camera (pinhole, sin profundidad de campo)
 Camera::Camera(const Point& origin_, const Direction& l_, const Direction& u_, const Direction& f_)
-    : origin(origin_), l(l_), u(u_), f(f_) {
+    : origin(origin_), l(l_), u(u_), f(f_), apertureRadius(0.0), focalLength(1.0), focalDistance(1.0) {
+
+    // Construir matriz de transformación de espacio cámara a espacio mundo
+    transformation_matrix(0,0) = l.x(); transformation_matrix(0,1) = u.x(); transformation_matrix(0,2) = f.x(); transformation_matrix(0,3) = origin.x();
+    transformation_matrix(1,0) = l.y(); transformation_matrix(1,1) = u.y(); transformation_matrix(1,2) = f.y(); transformation_matrix(1,3) = origin.y();
+    transformation_matrix(2,0) = l.z(); transformation_matrix(2,1) = u.z(); transformation_matrix(2,2) = f.z(); transformation_matrix(2,3) = origin.z();
+    transformation_matrix(3,0) = 0;     transformation_matrix(3,1) = 0;     transformation_matrix(3,2) = 0;     transformation_matrix(3,3) = 1;
+    
+    inverse_transformation_matrix = transformation_matrix.inverse();
+}
+
+// Constructor de Camera con profundidad de campo
+Camera::Camera(const Point& origin_, const Direction& l_, const Direction& u_, const Direction& f_,
+               double apertureRadius_, double focalDistance_)
+    : origin(origin_), l(l_), u(u_), f(f_), apertureRadius(apertureRadius_), focalDistance(focalDistance_) {
+
+    // Calcular focal length usando la ecuación de lente delgada: 1/f = 1/u + 1/v
+    // image_dist = 1 (distancia del sensor a la lente, fija)
+    // object_dist = focalDistance (distancia del objeto enfocado a la lente)
+    double image_dist = 1.0;
+    double object_dist = focalDistance_;
+    focalLength = 1.0 / (1.0/image_dist + 1.0/object_dist);
 
     // Construir matriz de transformación de espacio cámara a espacio mundo
     transformation_matrix(0,0) = l.x(); transformation_matrix(0,1) = u.x(); transformation_matrix(0,2) = f.x(); transformation_matrix(0,3) = origin.x();
