@@ -529,7 +529,7 @@ void dof_three_spheres_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<
 
     // TRES ESFERAS A DIFERENTES PROFUNDIDADES (z diferente)    
     // Esfera CERCANA (más cerca de la cámara) - Roja/Magenta
-    Sphere esferaCercana(Point(-0.25, -0.25, -1), 0.25, Color(0, 0, 0), Color(0.9, 0.3, 0.5), Color(0,0,0), Color(0,0,0));
+    Sphere esferaCercana(Point(-0.25, -0.25, -1), 0.25, Color(0, 0, 0), Color(1, 0, 0), Color(0,0,0), Color(0,0,0));
     shapes.push_back(make_unique<Sphere>(esferaCercana));
     
     // Esfera MEDIA (en el centro) - Verde/Cian
@@ -890,7 +890,7 @@ int main() {
                                 Point rayOrigin;
                                 Direction rayDirection;
                                 
-                                if (camera.apertureRadius > 0.0) {
+                                /*if (camera.apertureRadius > 0.0) {
                                     // CÁMARA CON PROFUNDIDAD DE CAMPO
                                     
                                     // 1. Calcular la dirección hacia el píxel
@@ -924,7 +924,52 @@ int main() {
                                     rayOrigin = camera.cameraToWorld(cameraOrigin);
                                     rayDirection = camera.cameraToWorld(cameraDirection);
                                     
-                                } else {
+                                }*/ 
+                                if(camera.apertureRadius > 0.0) {
+                                    // CÁMARA CON PROFUNDIDAD DE CAMPO
+
+                                    // 0) Interpretación del input: 0=circular, 1=cuadrada
+                                    const bool apertureIsCircular = (apertureChoice == 0);
+
+                                    // 1) Rayo pinhole (dirección hacia el píxel) en espacio mundo
+                                    //    (x,y,1) está en espacio cámara; lo pasamos a mundo
+                                    Direction cameraPixelDir(x, y, z);
+                                    Direction pinholeDirWorld = camera.cameraToWorld(cameraPixelDir).normalized();
+
+                                    // 2) Plano focal en espacio mundo: perpendicular a 'forward' y a distancia focalDistance
+                                    Direction forward = camera.f.normalized(); // normal del plano focal
+
+                                    const double denom = pinholeDirWorld.dot(forward);
+                                    // Evitar divisiones raras si el rayo es casi paralelo al plano
+                                    double t = camera.focalDistance;
+                                    if (abs(denom) > 1e-12) {
+                                        // t = dot((P0 - O), n) / dot(d, n) ; aquí dot((P0-O),n)=focalDistance
+                                        t = camera.focalDistance / denom;
+                                    }
+                                    Point focusPoint = camera.origin + pinholeDirWorld * t;
+
+                                    // 3) Muestrear un punto aleatorio en la apertura (en el plano perpendicular a forward)
+                                    if (apertureIsCircular) {
+                                        const double r = camera.apertureRadius * sqrt(dis(gen));
+                                        const double theta = 2.0 * M_PI * dis(gen);
+                                        aperture_x = r * cos(theta);
+                                        aperture_y = r * sin(theta);
+                                    } else {
+                                        aperture_x = (2.0 * dis(gen) - 1.0) * camera.apertureRadius;
+                                        aperture_y = (2.0 * dis(gen) - 1.0) * camera.apertureRadius;
+                                    }
+
+                                    // 4) Convertir ese offset de apertura a mundo usando ejes l/u normalizados
+                                    Direction lHat = camera.l.normalized();
+                                    Direction uHat = camera.u.normalized();
+                                    Point lensPointWorld = camera.origin + lHat * aperture_x + uHat * aperture_y;
+
+                                    // 5) Rayo final: desde la lente hacia el punto de enfoque
+                                    rayOrigin = lensPointWorld;
+                                    rayDirection = (focusPoint - lensPointWorld).normalized();
+
+                                }
+                                else {
                                     // CÁMARA PINHOLE (sin profundidad de campo)
                                     Point cameraPixelPoint(x, y, z);
                                     Point cameraLocalOrigin = Point(0,0,0);
