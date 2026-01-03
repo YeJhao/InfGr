@@ -782,7 +782,8 @@ int main() {
                 bool useDoF = (dofInput == "s" || dofInput == "S");
                 
                 Camera camera(Point(0, 0, -3.5), Direction(-1,0,0), Direction(0,1,0), Direction(0,0,3));
-                
+                int apertureChoice;
+
                 if (useDoF) {
                     cout << "Radio de apertura (ej. 0.1): ";
                     double apertureRadius;
@@ -791,6 +792,9 @@ int main() {
                     cout << "Distancia focal (distancia al plano enfocado, ej. 3.5): ";
                     double focalDistance;
                     cin >> focalDistance;
+
+                    cout << "Tipo de apertura a utilizar (0. Circular | 1. Cuadrada): ";
+                    cin >> apertureChoice;
                     
                     camera = Camera(Point(0, 0, -3.5), Direction(-1,0,0), Direction(0,1,0), 
                                    Direction(0,0,3), apertureRadius, focalDistance);
@@ -858,6 +862,7 @@ int main() {
                     // De momento determinista (TODO: pensar en inclusión de rd())
                     mt19937 gen(1234 + omp_get_thread_num()); // Semilla diferente por hilo
                     uniform_real_distribution<double> dis(0.0, 1.0);
+                    double aperture_x, aperture_y;  // Para muestreo en apertura
 
                     #pragma omp for schedule(dynamic)
                     for (int i = 0; i < pixelHeight; ++i) {
@@ -895,13 +900,20 @@ int main() {
                                     // Esta es la distancia que el usuario especificó como "distancia al plano enfocado"
                                     Point focalPoint = Point(0,0,0) + pixelDirection.normalized() * camera.focalDistance;
                                     
-                                    // 3. Muestrear un punto aleatorio en la apertura circular
-                                    // Muestreo uniforme en disco usando el método de Shirley
-                                    double r = camera.apertureRadius * sqrt(dis(gen));
-                                    double theta = 2.0 * M_PI * dis(gen);
-                                    double aperture_x = r * cos(theta);
-                                    double aperture_y = r * sin(theta);
-                                    
+                                    // 3. Muestrear un punto aleatorio en la apertura
+                                    if (apertureChoice) {
+                                        // Apertura circular
+                                        // Muestreo uniforme en disco usando el método de Shirley
+                                        double r = camera.apertureRadius * sqrt(dis(gen));
+                                        double theta = 2.0 * M_PI * dis(gen);
+                                        aperture_x = r * cos(theta);
+                                        aperture_y = r * sin(theta);
+                                    } else {
+                                        // Apertura cuadrada
+                                        // Muestreo uniforme de x e y entre [-1, 1]
+                                        aperture_x = (2.0 * dis(gen) - 1.0) * camera.apertureRadius;
+                                        aperture_y = (2.0 * dis(gen) - 1.0) * camera.apertureRadius;
+                                    }
                                     // Punto de origen en coordenadas de cámara (la apertura está en z=0)
                                     Point cameraOrigin(aperture_x, aperture_y, 0.0);
                                     
