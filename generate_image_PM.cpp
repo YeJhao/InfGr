@@ -496,8 +496,7 @@ void caustics_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_pt
     Sphere esferaDerecha(Point(0.5, -0.7, -0.25), 0.3, Color(0,0,0), Color(0,0,0), Color(0.02, 0.02, 0.02), Color(0.98, 0.98, 0.98), 1.5);
     shapes.push_back(make_unique<Sphere>(esferaDerecha));
 
-    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0,0,0), Color(0,0,0), 
-                           Color(0.96, 0.96, 0.96), Color(0.04, 0.04, 0.04), 1.33);
+    Sphere esferaIzquierda(Point(-0.5, -0.7, 0.25), 0.3, Color(0,0,0), Color(0,0,0), Color(0.96, 0.96, 0.96), Color(0.04, 0.04, 0.04), 1.33);
     shapes.push_back(make_unique<Sphere>(esferaIzquierda));
 
 
@@ -546,6 +545,46 @@ void dof_three_spheres_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<
     lights.push_back(make_unique<PointLight>(light));
 }
 
+// Cornell Box con 3 esferas: dieléctrica, especular y plástica
+void plastic_diel_spec_scene(vector<unique_ptr<GeometricShape>>& shapes, vector<unique_ptr<PointLight>>& lights) {
+    shapes.clear();
+    lights.clear();
+
+    // GEOMETRÍA
+    Plane planoArriba(Direction(0, -1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoArriba));
+
+    Plane planoAbajo(Direction(0, 1, 0), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoAbajo));
+
+    Plane planoFondo(Direction(0, 0, -1), 1, Color(0,0,0), Color(0.8, 0.8, 0.8), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoFondo));
+
+    Plane planoIzquierda(Direction(1, 0, 0), 1, Color(0,0,0), Color(0.8, 0.2, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoIzquierda));
+
+    Plane planoDerecha(Direction(-1, 0, 0), 1, Color(0,0,0), Color(0.2, 0.8, 0.2), Color(0,0,0), Color(0,0,0));
+    shapes.push_back(make_unique<Plane>(planoDerecha));
+
+    // Esferas
+    // Izquierda: Plástica
+    Sphere esferaPlastica(Point(-0.5, -0.7, -0.25), 0.3, Color(0,0,0), Color(0.65, 0.45, 0.75), Color(0.15, 0.15, 0.15), Color(0,0,0));
+    shapes.push_back(make_unique<Sphere>(esferaPlastica));
+
+    // Medio: Dieléctrica
+    Sphere esferaDiel(Point(0.5, -0.7, 0), 0.3, Color(0,0,0), Color(0,0,0), Color(0.02, 0.02, 0.02), Color(0.98, 0.98, 0.98), 1.5);
+    shapes.push_back(make_unique<Sphere>(esferaDiel));
+
+    // Derecha: Especular
+    Sphere esferaEspecular(Point(0, -0.7, 0.25), 0.3, Color(0,0,0), Color(0,0,0), Color(0.96, 0.96, 0.96), Color(0,0,0), 1.33);
+    shapes.push_back(make_unique<Sphere>(esferaEspecular));
+
+
+    // LUZ PUNTUAL
+    PointLight light(Point(0, 0.5, 0), Color(1, 1, 1));
+    lights.push_back(make_unique<PointLight>(light));
+}
+
 
 int main() {
     cout << "Tamaño de la imagen (anchura altura): ";
@@ -579,6 +618,7 @@ int main() {
         cout << "13. Sombras suaves" << endl;
         cout << "14. Caústicas" << endl;
         cout << "15. Depth of Field - 3 esferas a diferentes profundidades" << endl;
+        cout << "16. Esferas plástica, dieléctrica y especular" << endl;
         cout << "\n22. Generar imagen" << endl;
         cout << "0. Salir" << endl;
         cout << "Selecciona una opción: ";
@@ -685,6 +725,13 @@ int main() {
                 if (current_scene == 15) break;
                 dof_three_spheres_scene(shapes, lights);
                 current_scene = 15;
+                break;
+            }
+
+            case 16: {
+                if (current_scene == 16) break;
+                plastic_diel_spec_scene(shapes, lights);
+                current_scene = 16;
                 break;
             }
 
@@ -803,7 +850,6 @@ int main() {
                     cout << "  - Origen: (0,0,-3.5)" << endl;
                     cout << "  - Radio apertura: " << apertureRadius << endl;
                     cout << "  - Distancia focal: " << focalDistance << endl;
-                    cout << "  - Longitud focal calculada: " << camera.focalLength << endl;
                 } else {
                     cout << "Cámara pinhole configurada en origen (0,0,-3.5) con vectores <l=(-1,0,0), u=(0,1,0), f=(0,0,3)>." << endl;
                 }
@@ -890,41 +936,6 @@ int main() {
                                 Point rayOrigin;
                                 Direction rayDirection;
                                 
-                                /*if (camera.apertureRadius > 0.0) {
-                                    // CÁMARA CON PROFUNDIDAD DE CAMPO
-                                    
-                                    // 1. Calcular la dirección hacia el píxel
-                                    Direction pixelDirection(x, y, z);
-                                    
-                                    // 2. El punto focal está a focalDistance en la dirección del píxel
-                                    // Esta es la distancia que el usuario especificó como "distancia al plano enfocado"
-                                    Point focalPoint = Point(0,0,0) + pixelDirection.normalized() * camera.focalDistance;
-                                    
-                                    // 3. Muestrear un punto aleatorio en la apertura
-                                    if (apertureChoice) {
-                                        // Apertura circular
-                                        // Muestreo uniforme en disco usando el método de Shirley
-                                        double r = camera.apertureRadius * sqrt(dis(gen));
-                                        double theta = 2.0 * M_PI * dis(gen);
-                                        aperture_x = r * cos(theta);
-                                        aperture_y = r * sin(theta);
-                                    } else {
-                                        // Apertura cuadrada
-                                        // Muestreo uniforme de x e y entre [-1, 1]
-                                        aperture_x = (2.0 * dis(gen) - 1.0) * camera.apertureRadius;
-                                        aperture_y = (2.0 * dis(gen) - 1.0) * camera.apertureRadius;
-                                    }
-                                    // Punto de origen en coordenadas de cámara (la apertura está en z=0)
-                                    Point cameraOrigin(aperture_x, aperture_y, 0.0);
-                                    
-                                    // 4. La dirección del rayo va desde el punto en la apertura al punto focal
-                                    Direction cameraDirection = focalPoint - cameraOrigin;
-                                    
-                                    // 5. Transformar al espacio mundo
-                                    rayOrigin = camera.cameraToWorld(cameraOrigin);
-                                    rayDirection = camera.cameraToWorld(cameraDirection);
-                                    
-                                }*/ 
                                 if(camera.apertureRadius > 0.0) {
                                     // CÁMARA CON PROFUNDIDAD DE CAMPO
 

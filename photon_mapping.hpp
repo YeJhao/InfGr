@@ -14,6 +14,7 @@
 #include <array>
 #include <chrono>
 #include <iomanip>
+#include <algorithm>
 
 using namespace std;
 
@@ -117,7 +118,9 @@ inline void recursive_trace_photon(const int depth,
     Direction newRayDir;
     Color throughput; // Factor de transmisión del fotón
 
-    calculateThroughput(hit, ray, pDiff, pDiff + pSpec, dis0(gen), newRayDir, throughput, gen, dis0);
+    double rrValue = dis0(gen);
+
+    calculateThroughput(hit, ray, pDiff, pDiff + pSpec, rrValue, newRayDir, throughput, gen, dis0);
 
     // Crear nuevo rayo
     Ray newRay(hit.point, newRayDir);
@@ -129,8 +132,12 @@ inline void recursive_trace_photon(const int depth,
     // Marcar que rebotó en delta si no es difuso
     bool nextHasBounced = hasBouncedonDelta || (hit.kt.r > 0 || hit.kt.g > 0 || hit.kt.b > 0);
 
+    // El throughput ya incluye la división por la probabilidad (calculado en calculateThroughput)
+    // Por lo tanto: nextFlux = flux * (BSDF * cos / pdf) = flux * throughput
+    Color nextFlux = throughput * flux;
+
     // Llamada recursiva
-    recursive_trace_photon(depth + 1, newRay, shapes, throughput * flux, 
+    recursive_trace_photon(depth + 1, newRay, shapes, nextFlux, 
                            photon_list, maxPhotonsPerLight, useNEE, nextHasBounced);
 }
 
@@ -179,7 +186,7 @@ inline pair<PhotonMap, PhotonMap> generate_photon_map(const int numPhotons,
     for (const auto& light: lights) {
         list<Photon> photonsAux;
         int numRays = 0;
-        while (photonsGenerated < photonsPerLight) { 
+        while (photonsAux.size() < photonsPerLight) {
             // Lanzar dirección aleatoria desde la luz 
             Direction dir = sampleDirectionFromPointLight();
             Ray ray(light->position, dir);
@@ -275,8 +282,7 @@ inline Color nextEventEstimation(const HitInfo& hit,
 }
 
 inline Color boxKernel(HitInfo& hit,
-                       const vector<const Photon*>& nearestPhotons,
-                       double pDiff) {
+                       const vector<const Photon*>& nearestPhotons) {
     Color indirectLight(0, 0, 0);
 
     if (nearestPhotons.empty()) {
@@ -293,28 +299,20 @@ inline Color boxKernel(HitInfo& hit,
     // Denominador de la estimación del mapa de fotones
     float area = M_PI * maxDist * maxDist;
 
-    // BRDF difusa
-    Color fr(0, 0, 0);
-    fr = hit.kd / (M_PI * pDiff);
+    // BRDF difusa: kd / π
+    Color fr = hit.kd / M_PI;
 
     for (const Photon* photon: nearestPhotons) {
-        // Dirección del fotón (incidente)
-        Direction wi = photon->direction_ * (-1.0); // Invertir para obtener dirección que nos interesa
-        
-        // Factor geométrico (coseno del ángulo de incidencia)
-        double cosTheta = max(0.0, hit.normal.dot(wi));
-        
-        // Contribución += BSDF * cosTheta * flujo del fotón / área
-        indirectLight = indirectLight + (fr * cosTheta * photon->flux_ / area);
+        // Contribución += BRDF * flujo del fotón / área
+        // Nota: NO multiplicamos por cos(θ) porque el flujo ya lo incluye
+        indirectLight = indirectLight + (fr * photon->flux_ / area);
     }
 
     return indirectLight;
 }
 
 inline Color triangleKernel(HitInfo& hit,
-                           const vector<const Photon*>& nearestPhotons,
-                           double pDiff,
-                           const float k = 1.0f) {
+                           const vector<const Photon*>& nearestPhotons) {
     Color indirectLight(0, 0, 0);
 
     if (nearestPhotons.empty()) {
@@ -328,32 +326,26 @@ inline Color triangleKernel(HitInfo& hit,
         maxDist = max(maxDist, dist);
     }
 
-    // BRDF difusa
-    Color fr(0, 0, 0);
-    fr = hit.kd / (M_PI * pDiff);
+    // BRDF difusa: kd / π
+    Color fr = hit.kd / M_PI;
 
     for (const Photon* photon: nearestPhotons) {
-        // Dirección del fotón (incidente)
-        Direction wi = photon->direction_ * (-1.0);
-                
-        double cosTheta = max(0.0, hit.normal.dot(wi));
-        
         float dist = (photon->position_ - hit.point).norm();
-        float weight = 1.0f - (dist / (maxDist*k));
+        float weight = 1.0f - (dist / (maxDist));
 
-        indirectLight = indirectLight + (fr * cosTheta * photon->flux_ * weight);
+        // Contribución: BRDF * flujo * peso del kernel
+        indirectLight = indirectLight + (fr * photon->flux_ * weight);
     }
 
     // Normalización
-    float normalization = (1 - (2.0f / (3.0f * k))) * M_PI * maxDist * maxDist;
+    float normalization = (1 - (2.0f / 3.0f)) * M_PI * maxDist * maxDist;
     indirectLight = indirectLight / normalization;
 
     return indirectLight;
 }
 
 inline Color gaussianKernel(HitInfo& hit,
-                           const vector<const Photon*>& nearestPhotons,
-                           double pDiff) 
+                           const vector<const Photon*>& nearestPhotons) 
 {
     Color indirectLight(0, 0, 0);
 
@@ -369,31 +361,29 @@ inline Color gaussianKernel(HitInfo& hit,
         maxDist = max(maxDist, dist);
     }
 
-    // BRDF difusa
-    Color fr(0, 0, 0);
-    fr = hit.kd / (M_PI * pDiff);
+    // BRDF difusa: kd / π
+    Color fr = hit.kd / M_PI;
 
     for (const Photon* photon: nearestPhotons) {
-        // Dirección del fotón (incidente)
-        Direction wi = photon->direction_ * (-1.0);
-        
-        double cosTheta = max(0.0, hit.normal.dot(wi));
-        
         float dist = (photon->position_ - hit.point).norm();
         float weight = ALPHA * (1 - ((1-exp(-BETA*dist*dist/(2*maxDist*maxDist)))/(1-exp(-BETA))));
 
-        indirectLight = indirectLight + (fr * cosTheta * photon->flux_ * weight);
+        // Contribución: BRDF * flujo * peso del kernel
+        indirectLight = indirectLight + (fr * photon->flux_ * weight);
     }
 
     return indirectLight;
 }
 
 inline void cribePhotons(GeometricShape* shape, vector<const Photon*>& photons) {
-    for (const Photon* photon: photons) {
-        if (!shape->inSurface(photon->position_)) {
-            photons.erase(remove(photons.begin(), photons.end(), photon), photons.end());
-        }
-    }
+    // Usar erase-remove idiom correctamente (sin iterar y modificar a la vez)
+    photons.erase(
+        remove_if(photons.begin(), photons.end(), 
+            [shape](const Photon* photon) {
+                return !shape->inSurface(photon->position_);
+            }),
+        photons.end()
+    );
 }
 
 inline Color photonMap(const Ray& ray, 
@@ -440,108 +430,246 @@ inline Color photonMap(const Ray& ray,
     // ============================================
     // 2. ILUMINACIÓN INDIRECTA (Indirect Lighting)
     // ============================================
-    double pKill, pDiff, pSpec, pTrans;
-    calculateProbabilities(hit, pKill, pDiff, pSpec, pTrans);
 
-    // Solo calculada cuando el material es no delta (tiene valores != 0 en la componente difusa)
+    // - Componente difusa: usar mapa de fotones
+    // - Componente especular (sin transmisión): seguir rayo reflejado
+    // - Componente transmisiva: seguir rayo refractado
+    // Para materiales mixtos (plástico), evaluar AMBAS componentes
+    
     Color indirectLight(0, 0, 0);
-    if (isNonDeltaMaterial(hit)) {        
+    
+    double maxKd = max(hit.kd.r, max(hit.kd.g, hit.kd.b));
+    double maxKs = max(hit.ks.r, max(hit.ks.g, hit.ks.b));
+    double maxKt = max(hit.kt.r, max(hit.kt.g, hit.kt.b));
+    
+    // ===== COMPONENTE DIFUSA (si existe) =====
+    if (maxKd > 1e-6) {
         array<float, 3> queryPoint = pointToArray(hit.point);
         
-        // Cáusticas (más fotones, área más pequeña)
         vector<const Photon*> causticPhotons = caustic_map.nearest_neighbors(queryPoint, k_caustic);        
-        // Global (menos fotones, área más grande)
         vector<const Photon*> globalPhotons = global_map.nearest_neighbors(queryPoint, k_global);
-
-        Color causticContrib, globalContrib;
 
         cribePhotons(hit.shape, globalPhotons);
         cribePhotons(hit.shape, causticPhotons);
 
+        Color causticContrib, globalContrib;
+
         switch (kernel) {
-            case 1: // Caja
-                causticContrib = boxKernel(hit, causticPhotons, pDiff);
-                globalContrib = boxKernel(hit, globalPhotons, pDiff);
-                indirectLight = causticContrib + globalContrib;
+            case 1:
+                causticContrib = boxKernel(hit, causticPhotons);
+                globalContrib = boxKernel(hit, globalPhotons);
                 break;
-            case 2: // Triángulo
-                causticContrib = triangleKernel(hit, causticPhotons, pDiff);
-                globalContrib = triangleKernel(hit, globalPhotons, pDiff);
-                indirectLight = causticContrib + globalContrib;
+            case 2:
+                causticContrib = triangleKernel(hit, causticPhotons);
+                globalContrib = triangleKernel(hit, globalPhotons);
                 break;
-            case 3: // Gaussiano
-                causticContrib = gaussianKernel(hit, causticPhotons, pDiff);
-                globalContrib = gaussianKernel(hit, globalPhotons, pDiff);
-                indirectLight = causticContrib + globalContrib;
+            case 3:
+                causticContrib = gaussianKernel(hit, causticPhotons);
+                globalContrib = gaussianKernel(hit, globalPhotons);
                 break;
             default:
                 break;
         }
-    } else {
-        double rrValue = dis0(gen);
-        if (rrValue < pSpec) {
-            // ===== LÓBULO ESPECULAR (Reflexión perfecta) =====
-            Direction wo = ray.d * (-1.0); // Dirección hacia afuera (opuesta al rayo incidente)
-            Direction newRayDir = perfectReflection(wo, hit.normal);
-
-            Ray newRay(hit.point, newRayDir);
-
-            indirectLight = indirectLight + 
-                           (photonMap(newRay, shapes, lights, depth + 1, global_map, caustic_map, 
-                                               useNEE, kernel, k_caustic, k_global) * pSpec);
-
-        } else {
-            // ===== LÓBULO DE TRANSMISIÓN (Refracción) =====
-            Direction wo = ray.d * (-1.0); // Dirección hacia afuera
-            Direction newRayDir;
-
-            // Determinar si estamos entrando o saliendo del objeto
-            // Si n·wo > 0, el rayo viene del exterior (entrando)
-            // Si n·wo < 0, el rayo viene del interior (saliendo)
+        indirectLight = indirectLight + causticContrib + globalContrib;
+    }
+    
+    // ===== COMPONENTE ESPECULAR Y/O TRANSMISIVA =====
+    // Según las diapositivas: seguir rayo a través de superficies delta
+    // Para dieléctricos (kt dominante): seguir transmisión
+    // Para espejos (ks dominante): seguir reflexión
+    if (maxKs > 1e-6 && maxKt > 1e-6) {
+        // Material con ambos: seguir el camino DOMINANTE
+        if (maxKt >= maxKs) {
+            // Transmisión dominante (dieléctrico típico)
+            Direction wo = ray.d * (-1.0);
             double cosTheta = hit.normal.dot(wo);
+            double iorFrom, iorTo;
+            Direction effectiveNormal;
             
-            // NOTA: Esta implementación asume transiciones aire ↔ material.
-            // LIMITACIÓN: No maneja correctamente objetos dieléctricos anidados
-            // (ej: esfera de vidrio dentro de otra esfera de vidrio).
-            // Para soportar anidamiento, se necesitaría un stack de IORs que 
-            // trackee los materiales atravesados en el camino del rayo.
+            if (cosTheta > 0) {
+                iorFrom = 1.0;
+                iorTo = hit.ior;
+                effectiveNormal = hit.normal;
+            } else {
+                iorFrom = hit.ior;
+                iorTo = 1.0;
+                effectiveNormal = hit.normal * (-1.0);
+            }
+            
+            Direction wt = perfectRefraction(wo, effectiveNormal, iorFrom, iorTo);
+            Direction newRayDir;
+            
+            if (wt.d[0] == 0 && wt.d[1] == 0 && wt.d[2] == 0) {
+                // Reflexión interna total
+                newRayDir = perfectReflection(wo, effectiveNormal);
+            } else {
+                newRayDir = wt;
+            }
+            
+            Ray newRay(hit.point, newRayDir);
+            Color transmitLight = photonMap(newRay, shapes, lights, depth + 1, global_map, caustic_map, 
+                                            useNEE, kernel, k_caustic, k_global);
+            // Sin dividir por probabilidad - seguimos el camino dominante
+            indirectLight = indirectLight + transmitLight;
+        } else {
+            // Reflexión dominante (espejo con algo de kt)
+            Direction wo = ray.d * (-1.0);
+            Direction newRayDir = perfectReflection(wo, hit.normal);
+            Ray newRay(hit.point, newRayDir);
+            
+            Color specularLight = photonMap(newRay, shapes, lights, depth + 1, global_map, caustic_map, 
+                                            useNEE, kernel, k_caustic, k_global);
+            indirectLight = indirectLight + specularLight;
+        }
+    }
+    else if (maxKs > 1e-6) {
+        // Solo especular (espejo puro o plástico)
+        Direction wo = ray.d * (-1.0);
+        Direction newRayDir = perfectReflection(wo, hit.normal);
+        Ray newRay(hit.point, newRayDir);
+
+        Color specularLight = photonMap(newRay, shapes, lights, depth + 1, global_map, caustic_map, 
+                                        useNEE, kernel, k_caustic, k_global);
+        indirectLight = indirectLight + (specularLight * hit.ks);
+    }
+    else if (maxKt > 1e-6) {
+        // Solo transmisión
+        Direction wo = ray.d * (-1.0);
+        double cosTheta = hit.normal.dot(wo);
+        double iorFrom, iorTo;
+        Direction effectiveNormal;
+        
+        if (cosTheta > 0) {
+            iorFrom = 1.0;
+            iorTo = hit.ior;
+            effectiveNormal = hit.normal;
+        } else {
+            iorFrom = hit.ior;
+            iorTo = 1.0;
+            effectiveNormal = hit.normal * (-1.0);
+        }
+        
+        Direction wt = perfectRefraction(wo, effectiveNormal, iorFrom, iorTo);
+        Direction newRayDir;
+        
+        if (wt.d[0] == 0 && wt.d[1] == 0 && wt.d[2] == 0) {
+            newRayDir = perfectReflection(wo, effectiveNormal);
+        } else {
+            newRayDir = wt;
+        }
+        
+        Ray newRay(hit.point, newRayDir);
+        Color transmitLight = photonMap(newRay, shapes, lights, depth + 1, global_map, caustic_map, 
+                                        useNEE, kernel, k_caustic, k_global);
+        indirectLight = indirectLight + transmitLight;
+    }
+    
+    
+    /*{
+        // =====================================================
+        // MATERIAL DELTA (especular y/o refractivo)
+        // =====================================================
+        
+        Direction wo = ray.d * (-1.0); // Dirección saliente (opuesta al rayo incidente)
+        
+        // Calcular qué componentes tiene el material
+        double maxKs = max(hit.ks.r, max(hit.ks.g, hit.ks.b));
+        double maxKt = max(hit.kt.r, max(hit.kt.g, hit.kt.b));
+        
+        // CASO 1: Solo especular (espejo puro, sin transmisión)
+        if (maxKt < 1e-6 && maxKs > 1e-6) {
+            Direction reflectDir = perfectReflection(wo, hit.normal);
+            Ray reflectRay(hit.point, reflectDir);
+            
+            indirectLight = photonMap(reflectRay, shapes, lights, depth + 1, 
+                                      global_map, caustic_map, useNEE, kernel, 
+                                      k_caustic, k_global) * hit.ks;
+        }
+        // CASO 2: Solo transmisión o transmisión dominante (>90%)
+        else if (maxKt > 0.9 * (maxKs + maxKt)) {
+            // Determinar si estamos entrando o saliendo del objeto
+            // cosTheta > 0 significa que wo apunta hacia el mismo lado que la normal
+            // es decir, el rayo viene del exterior (entrando al objeto)
+            double cosTheta = hit.normal.dot(wo);
             double iorFrom, iorTo;
             Direction effectiveNormal;
             
             if (cosTheta > 0) {
                 // Entrando al objeto: aire -> material
-                iorFrom = 1.0;  // IOR del aire
-                iorTo = hit.ior;    // IOR del material
+                iorFrom = 1.0;
+                iorTo = hit.ior;
                 effectiveNormal = hit.normal;
             } else {
                 // Saliendo del objeto: material -> aire
-                iorFrom = hit.ior;  // IOR del material
-                iorTo = 1.0;    // IOR del aire
-                effectiveNormal = hit.normal * (-1.0); // Invertir la normal
-                cosTheta = -cosTheta; // Corregir el coseno
+                iorFrom = hit.ior;
+                iorTo = 1.0;
+                effectiveNormal = hit.normal * (-1.0);
+                cosTheta = -cosTheta;
             }
             
-            // Calcular dirección refractada
             Direction wt = perfectRefraction(wo, effectiveNormal, iorFrom, iorTo);
+            Direction transmitDir;
             
-            // Comprobar si hubo reflexión interna total
-            //Color throughput = hit.kt; // Coeficiente de transmisión
-            // Refracción exitosa
-            newRayDir = wt;
-            if (wt.d[0] == 0 && wt.d[1] == 0 && wt.d[2] == 0) {
-                // Reflexión interna total - usar reflexión en lugar de refracción
-                newRayDir = perfectReflection(wo, effectiveNormal);
-                //throughput = Color(0,0,0); // Asumir que toda la energía se refleja
+            if (wt.norm() < 1e-6) {
+                // Reflexión interna total - TODA la energía se refleja
+                transmitDir = perfectReflection(wo, effectiveNormal);
+                // En TIR, la luz se refleja, así que usamos ks (o un valor por defecto)
+                indirectLight = photonMap(Ray(hit.point, transmitDir), shapes, lights, depth + 1, 
+                                          global_map, caustic_map, useNEE, kernel, 
+                                          k_caustic, k_global) * Color(1, 1, 1);
+            } else {
+                transmitDir = wt;
+                Ray transmitRay(hit.point, transmitDir);
+                
+                // En transmisión, usamos kt (casi 1 para dieléctricos puros)
+                indirectLight = photonMap(transmitRay, shapes, lights, depth + 1, 
+                                          global_map, caustic_map, useNEE, kernel, 
+                                          k_caustic, k_global) * hit.kt;
             }
-
-            Ray newRay(hit.point, newRayDir);
-
-            indirectLight = indirectLight + 
-                            (photonMap(newRay, shapes, lights, depth + 1, global_map, caustic_map, 
-                                               useNEE, kernel, k_caustic, k_global) /*/ pTrans*/);
         }
-    }
-    
+        // CASO 3: Mezcla significativa de especular y transmisión
+        else if (maxKs > 1e-6 && maxKt > 1e-6) {
+            double totalDelta = maxKs + maxKt;
+            double probSpec = maxKs / totalDelta;
+            double rrValue = dis0(gen);
+            
+            if (rrValue < probSpec) {
+                // Reflexión especular
+                Direction reflectDir = perfectReflection(wo, hit.normal);
+                Ray reflectRay(hit.point, reflectDir);
+                
+                indirectLight = photonMap(reflectRay, shapes, lights, depth + 1, 
+                                          global_map, caustic_map, useNEE, kernel, 
+                                          k_caustic, k_global) * hit.ks / probSpec;
+            } else {
+                // Transmisión
+                double cosTheta = hit.normal.dot(wo);
+                double iorFrom, iorTo;
+                Direction effectiveNormal;
+                
+                if (cosTheta > 0) {
+                    iorFrom = 1.0;
+                    iorTo = hit.ior;
+                    effectiveNormal = hit.normal;
+                } else {
+                    iorFrom = hit.ior;
+                    iorTo = 1.0;
+                    effectiveNormal = hit.normal * (-1.0);
+                }
+                
+                Direction wt = perfectRefraction(wo, effectiveNormal, iorFrom, iorTo);
+                Direction transmitDir = (wt.norm() < 1e-6) 
+                                        ? perfectReflection(wo, effectiveNormal) : wt;
+                
+                Ray transmitRay(hit.point, transmitDir);
+                
+                indirectLight = photonMap(transmitRay, shapes, lights, depth + 1, 
+                                          global_map, caustic_map, useNEE, kernel, 
+                                          k_caustic, k_global) * hit.kt / (1.0 - probSpec);
+            }
+        }
+    }*/
+
     return L + indirectLight;
 }
 

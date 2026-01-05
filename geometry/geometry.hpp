@@ -71,8 +71,7 @@ class Camera {
         
         // Parámetros para profundidad de campo
         double apertureRadius;  // Radio de la apertura (0 = pinhole)
-        double focalLength;     // Longitud focal de la lente
-        double focalDistance;   // Distancia al plano enfocado (v en ecuación de lente delgada)
+        double focalDistance;   // Distancia al plano enfocado 
 
         // Constructor sin profundidad de campo (pinhole)
         Camera(const Point& origin_, const Direction& l_, const Direction& u_, const Direction& f_);

@@ -98,7 +98,7 @@ std::ostream& operator<<(std::ostream& os, const Direction& dir) {
 
 // Constructor de Camera (pinhole, sin profundidad de campo)
 Camera::Camera(const Point& origin_, const Direction& l_, const Direction& u_, const Direction& f_)
-    : origin(origin_), l(l_), u(u_), f(f_), apertureRadius(0.0), focalLength(1.0), focalDistance(1.0) {
+    : origin(origin_), l(l_), u(u_), f(f_), apertureRadius(0.0), focalDistance(1.0) {
 
     // Construir matriz de transformación de espacio cámara a espacio mundo
     transformation_matrix(0,0) = l.x(); transformation_matrix(0,1) = u.x(); transformation_matrix(0,2) = f.x(); transformation_matrix(0,3) = origin.x();
@@ -113,13 +113,6 @@ Camera::Camera(const Point& origin_, const Direction& l_, const Direction& u_, c
 Camera::Camera(const Point& origin_, const Direction& l_, const Direction& u_, const Direction& f_,
                double apertureRadius_, double focalDistance_)
     : origin(origin_), l(l_), u(u_), f(f_), apertureRadius(apertureRadius_), focalDistance(focalDistance_) {
-
-    // Calcular focal length usando la ecuación de lente delgada: 1/f = 1/u + 1/v
-    // image_dist = 1 (distancia del sensor a la lente, fija)
-    // object_dist = focalDistance (distancia del objeto enfocado a la lente)
-    double image_dist = 1.0;
-    double object_dist = focalDistance_;
-    focalLength = 1.0 / (1.0/image_dist + 1.0/object_dist);
 
     // Construir matriz de transformación de espacio cámara a espacio mundo
     transformation_matrix(0,0) = l.x(); transformation_matrix(0,1) = u.x(); transformation_matrix(0,2) = f.x(); transformation_matrix(0,3) = origin.x();
