@@ -364,12 +364,24 @@ inline Color gaussianKernel(HitInfo& hit,
     // BRDF difusa: kd / π
     Color fr = hit.kd / M_PI;
 
+    // Área del disco (normalización de densidad)
+    float area = M_PI * maxDist * maxDist;
+
+    // Calcular suma de pesos para normalización correcta
+    float sumWeights = 0.0f;
+
     for (const Photon* photon: nearestPhotons) {
         float dist = (photon->position_ - hit.point).norm();
         float weight = ALPHA * (1 - ((1-exp(-BETA*dist*dist/(2*maxDist*maxDist)))/(1-exp(-BETA))));
+        sumWeights += weight;
 
         // Contribución: BRDF * flujo * peso del kernel
         indirectLight = indirectLight + (fr * photon->flux_ * weight);
+    }
+
+    // Normalizar por área y por suma de pesos (conserva energía)
+    if (sumWeights > 1e-6f) {
+        indirectLight = indirectLight / (area * sumWeights / nearestPhotons.size());
     }
 
     return indirectLight;
