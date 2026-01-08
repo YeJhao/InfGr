@@ -1,4 +1,4 @@
-# Práctica 1 - Path Tracing
+# Práctica 2 - Extensiones
 
 ---
 
@@ -8,13 +8,14 @@ El código está estructurado en varias carpetas, cada una conteniendo el códig
 
 - **geometry**: Módulo de geometrías. Contiene las formas geométricas utilizadas en nuestro Path Tracing, la definición de la clase Color, así como un fichero auxiliar con funciones de refracción y reflexión (bsdf_utils)
 - **imaging**: Módulo encargado de aplicar tone mapping al render final de forma que se pueda ver la imagen en formato PNG.
+- **kdTree**: Módulo con la definición del K-D Tree, que se usará para guardar la estructura de fotones.
 - **light**: Módulo encargado de la definición de luces puntuales.
 - **ray**: Módulo encargado de la definición de los rayos.
 
 A parte de estos módulos, se pueden encontrar dos ficheros sueltos:
 
-- **generate_image_PT**: Fichero encargado de generar el ejecutable. Contiene el _main_ donde se le pide al usuario toda información y se le da un menú en el que puede elegir la escena que quiere renderizar.
-- **path_tracing**: Fichero encargado de calcular la Ecuación de Render, teniendo en cuenta tanto luz directa como indirecta, la generación de nuevos rayos, etc.
+- **generate_image_PM**: Fichero encargado de generar el ejecutable para la implementación de las extensiones. Contiene el _main_ donde se le pide al usuario toda información y se le da un menú en el que puede elegir la escena que quiere renderizar.
+- **photon_mapping**: Fichero con definiciones de funciones relacionadas con Photon Mapping, como la generación del mapa de fotones, la estimación de radiancia, etc.
 
 ---
 
@@ -33,6 +34,6 @@ Se supone que tiene compatibilidad de compilación y ejecución tanto en Windows
    3.2. Fuera del directorio ejecutamos:
    `cmake --build build`
 
-De esta forma generaremos un ejecutable `generate_image_PT` en el directorio "_executables_".
+De esta forma generaremos un ejecutable `generate_image_PM` en el directorio "_executables_".
 Para poder ejecutarlo, escribimos en la terminal:
-`./ruta_a_executables/generate_image_PT`
+`./ruta_a_executables/generate_image_PM`
