@@ -781,7 +781,7 @@ int main() {
                 if (!numNeighborsInput.empty()) {
                     try {
                         int newNumNeighbors = stoi(numNeighborsInput);
-                        if (newNumNeighbors > 0) {
+                        if (newNumNeighbors >= 0) {
                             numNeighbors = newNumNeighbors;
                         }
                     } catch (const exception&) {
@@ -798,7 +798,7 @@ int main() {
                 if (!numCausticNeighborsInput.empty()) {
                     try {
                         int newNumCausticNeighbors = stoi(numCausticNeighborsInput);
-                        if (newNumCausticNeighbors > 0) {
+                        if (newNumCausticNeighbors >= 0) {
                             numCausticNeighbors = newNumCausticNeighbors;
                         }
                     } catch (const exception&) {
