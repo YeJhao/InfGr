@@ -14,7 +14,9 @@ El código está estructurado en varias carpetas, cada una conteniendo el códig
 
 A parte de estos módulos, se pueden encontrar dos ficheros sueltos:
 
+- **generate_image_PT**: Fichero encargado de generar el ejecutable del Path tracer, de la primera práctica. Contiene el _main_ donde se le pide al usuario toda información y se le da un menú en el que puede elegir la escena que quiere renderizar.
 - **generate_image_PM**: Fichero encargado de generar el ejecutable para la implementación de las extensiones. Contiene el _main_ donde se le pide al usuario toda información y se le da un menú en el que puede elegir la escena que quiere renderizar.
+- **path_tracing**: Fichero encargado de calcular la Ecuación de Render, teniendo en cuenta tanto luz directa como indirecta, la generación de nuevos rayos, etc.
 - **photon_mapping**: Fichero con definiciones de funciones relacionadas con Photon Mapping, como la generación del mapa de fotones, la estimación de radiancia, etc.
 
 ---

@@ -1,5 +1,5 @@
 /**
-* generate_image.cpp
+* generate_image_PT.cpp
 * Autores: Jiahao Ye (875490) & Raúl Soler Fernández (875478)
 * 
 * Este fichero contiene la configuración de distintas escenas de Cornell Box
